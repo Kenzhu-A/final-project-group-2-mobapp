@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { theme } from '../theme/index';
+import { theme } from '../theme';
 
 interface Props {
   title: string;
@@ -12,7 +12,6 @@ interface Props {
 
 export default function PrimaryButton({ title, onPress, disabled, loading, type = 'primary' }: Props) {
   const isPrimary = type === 'primary';
-  
   return (
     <TouchableOpacity
       style={[
@@ -35,7 +34,7 @@ export default function PrimaryButton({ title, onPress, disabled, loading, type 
 
 const styles = StyleSheet.create({
   button: {
-    height: 52, // STRICT: 48-52dp
+    height: 52, // STRICT: 48-52dp requirement
     backgroundColor: theme.colors.primary,
     borderRadius: theme.radius.button,
     justifyContent: 'center',
@@ -48,6 +47,6 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   disabled: { opacity: 0.5 },
-  text: { color: theme.colors.surface, fontSize: 16, fontWeight: '600' },
+  text: { color: theme.colors.surface, fontSize: 16, fontFamily: theme.typography.bodyFontBold },
   secondaryText: { color: theme.colors.primary },
 });

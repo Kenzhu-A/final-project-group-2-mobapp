@@ -14,6 +14,9 @@ export const theme = {
     xs: 4, s: 8, m: 16, l: 24, xl: 32, xxl: 48,
   },
   typography: {
+    headingFont: 'DMSerifDisplay_400Regular',
+    bodyFont: 'DMSans_400Regular',
+    bodyFontBold: 'DMSans_700Bold',
     titleSize: 28,
     subtitleSize: 15,
     labelSize: 13,

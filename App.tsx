@@ -1,54 +1,40 @@
-import React, { useState, useMemo, createContext } from 'react';
-import { Platform, StatusBar as RNStatusBar, SafeAreaView } from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native'; // <-- Required for navigation
+import { useFonts, DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
+import { DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
 
-import AuthNavigator from './src/navigation/AuthNavigator';
-import MainAppScreen from './src/screens/MainAppScreen';
-import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import LoginScreen from './src/screens/LoginScreen';
+import SignupScreen from './src/screens/SignupScreen';
+import HomeScreen from './src/screens/HomeScreen';
 
-// 1. Create a global Auth Context to manage state from any screen
-export const AuthContext = createContext({
-  signIn: () => {},
-  signOut: () => {},
-});
-
-const AppContainer = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { colors, isDarkMode } = useTheme();
-
-  // 2. Define the context actions
-  const authContext = useMemo(
-    () => ({
-      signIn: () => setIsAuthenticated(true),
-      signOut: () => setIsAuthenticated(false),
-    }),
-    []
-  );
-
-  return (
-    <AuthContext.Provider value={authContext}>
-      <SafeAreaView style={{ flex: 1, paddingTop: Platform.OS === 'android' ? RNStatusBar.currentHeight : 0, backgroundColor: colors.background }}>
-        
-        {/* 3. Wrap screens in NavigationContainer */}
-        <NavigationContainer>
-          {!isAuthenticated ? (
-            <AuthNavigator />
-          ) : (
-            <MainAppScreen /> 
-          )}
-        </NavigationContainer>
-
-        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-      </SafeAreaView>
-    </AuthContext.Provider>
-  );
-};
+const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    DMSerifDisplay_400Regular,
+    DMSans_400Regular,
+    DMSans_700Bold,
+  });
+
+  if (!fontsLoaded) return null;
+
   return (
-    <ThemeProvider>
-      <AppContainer />
-    </ThemeProvider>
+    <NavigationContainer>
+      <Stack.Navigator 
+        initialRouteName="Login"
+        screenOptions={{ 
+          headerShown: false,
+          animation: 'fade', // Smooth transitions
+          gestureEnabled: false // Extra protection against swipe back on iOS
+        }}
+      >
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Signup" component={SignupScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} />
+      </Stack.Navigator>
+      <StatusBar style="dark" />
+    </NavigationContainer>
   );
 }
