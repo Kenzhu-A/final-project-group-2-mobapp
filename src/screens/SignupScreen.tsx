@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { 
   View, Text, StyleSheet, KeyboardAvoidingView, Platform, 
-  ScrollView, TouchableWithoutFeedback, Keyboard, TouchableOpacity, BackHandler 
+  ScrollView, TouchableWithoutFeedback, Keyboard, TouchableOpacity, BackHandler, Alert 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -9,25 +9,23 @@ import CustomInput from '../components/CustomInput';
 import PrimaryButton from '../components/PrimaryButton';
 import { theme } from '../theme';
 import { Validators } from '../utils/validators';
+import { api } from '../services/api';
 
 export default function SignupScreen({ navigation }: any) {
   const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' });
   const [errors, setErrors] = useState({ fullName: '', email: '', password: '', confirmPassword: '' });
+  const [isLoading, setIsLoading] = useState(false);
 
   // STRICT: Disable Android Hardware Back Button
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => true; 
-      
-      // Store the subscription object returned by addEventListener
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      
-      // Call .remove() on the subscription during cleanup
       return () => subscription.remove();
     }, [])
   );
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     let valid = true;
     let newErrors = { fullName: '', email: '', password: '', confirmPassword: '' };
 
@@ -41,7 +39,16 @@ export default function SignupScreen({ navigation }: any) {
     setErrors(newErrors);
 
     if (valid) {
-      navigation.navigate('Home');
+      setIsLoading(true);
+      try {
+        // CALL BACKEND REGISTRATION
+        await api.register(form.email, form.password, form.fullName);
+        setIsLoading(false);
+        navigation.navigate('Home');
+      } catch (err: any) {
+        setIsLoading(false);
+        Alert.alert("Registration Error", err.message);
+      }
     }
   };
 
@@ -67,20 +74,22 @@ export default function SignupScreen({ navigation }: any) {
                 value={form.email} onChangeText={(t) => { setForm({ ...form, email: t }); setErrors({ ...errors, email: '' }); }}
                 error={errors.email} keyboardType="email-address" autoCapitalize="none"
               />
+              {/* Added the eye icon toggle to the Password field */}
               <CustomInput 
                 label="Password" placeholder="Create a password" 
                 value={form.password} onChangeText={(t) => { setForm({ ...form, password: t }); setErrors({ ...errors, password: '' }); }}
-                error={errors.password} secureTextEntry
+                error={errors.password} isPassword={true}
               />
+              {/* Added the eye icon toggle to the Confirm Password field */}
               <CustomInput 
                 label="Confirm Password" placeholder="Repeat password" 
                 value={form.confirmPassword} onChangeText={(t) => { setForm({ ...form, confirmPassword: t }); setErrors({ ...errors, confirmPassword: '' }); }}
-                error={errors.confirmPassword} secureTextEntry
+                error={errors.confirmPassword} isPassword={true}
               />
             </View>
 
             <View style={styles.footer}>
-              <PrimaryButton title="Create Account" onPress={handleSignup} />
+              <PrimaryButton title="Create Account" onPress={handleSignup} loading={isLoading} />
               <View style={styles.loginRow}>
                 <Text style={styles.footerText}>Already have an account? </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('Login')}>
