@@ -20,11 +20,7 @@ export default function LoginScreen({ navigation }: any) {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => true; 
-      
-      // Store the subscription object returned by addEventListener
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      
-      // Call .remove() on the subscription during cleanup
       return () => subscription.remove();
     }, [])
   );
@@ -42,7 +38,7 @@ export default function LoginScreen({ navigation }: any) {
       setIsLoading(true);
       setTimeout(() => {
         setIsLoading(false);
-        navigation.navigate('Home'); // Navigates to main app
+        navigation.navigate('Home'); 
       }, 1000);
     }
   };
@@ -53,11 +49,20 @@ export default function LoginScreen({ navigation }: any) {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             
+            {/* Branding Section */}
             <View style={styles.logoContainer}>
               <Image source={require('../../assets/dog-logo.png')} style={styles.logoImage} />
               <Image source={require('../../assets/snoutscout.png')} style={styles.textLogoImage} resizeMode="contain" />
+              <Text style={styles.taglineText}>Find your best companion.</Text>
             </View>
 
+            {/* Header Section */}
+            <View style={styles.headerContainer}>
+              <Text style={styles.title}>Welcome back</Text>
+              <Text style={styles.subtitle}>Sign in to continue</Text>
+            </View>
+
+            {/* Form Section */}
             <View style={styles.form}>
               <CustomInput 
                 label="Email Address" placeholder="Enter your email" 
@@ -69,16 +74,33 @@ export default function LoginScreen({ navigation }: any) {
                 value={password} onChangeText={(t) => { setPassword(t); setErrors({ ...errors, password: '' }); }}
                 error={errors.password} secureTextEntry
               />
+
+              {/* Restored Forgot Password Link */}
+              <TouchableOpacity 
+                style={styles.forgotPasswordContainer}
+                onPress={() => navigation.navigate('ForgotPasswordScreen')}
+              >
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
             </View>
 
+            {/* Footer / Actions Section */}
             <View style={styles.footer}>
               <PrimaryButton title="Sign In" onPress={handleLogin} loading={isLoading} disabled={!email || !password} />
               
+              {/* Divider Line */}
+              <View style={styles.dividerContainer}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or continue with</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
               <TouchableOpacity style={styles.googleButton}>
                 <Image source={require('../../assets/googlelogo.png')} style={styles.googleIcon} />
                 <Text style={styles.googleButtonText}>Continue with Google</Text>
               </TouchableOpacity>
 
+              {/* Restored Sign Up Link */}
               <View style={styles.signupRow}>
                 <Text style={styles.footerText}>Don't have an account? </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
@@ -98,15 +120,38 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.background },
   container: { flex: 1 },
   scroll: { flexGrow: 1, padding: theme.spacing.l, justifyContent: 'center' },
-  logoContainer: { alignItems: 'center', marginBottom: theme.spacing.xl, marginTop: theme.spacing.l },
-  logoImage: { width: 100, height: 100, marginBottom: theme.spacing.s },
-  textLogoImage: { width: 180, height: 40 },
-  form: { marginBottom: theme.spacing.l },
+  
+  // Branding Styles
+  logoContainer: { alignItems: 'center', marginBottom: theme.spacing.xl, marginTop: theme.spacing.m },
+  logoImage: { width: 90, height: 90, marginBottom: theme.spacing.s },
+  textLogoImage: { width: 160, height: 35 },
+  taglineText: { color: theme.colors.textLight, fontSize: 12, fontFamily: theme.typography.bodyFont, marginTop: theme.spacing.xs },
+  
+  // Header Styles
+  headerContainer: { marginBottom: theme.spacing.l },
+  title: { fontSize: theme.typography.titleSize, color: theme.colors.textDark, fontFamily: theme.typography.headingFont, marginBottom: 4 },
+  subtitle: { fontSize: theme.typography.subtitleSize, color: theme.colors.textLight, fontFamily: theme.typography.bodyFont },
+  
+  // Form Styles
+  form: { marginBottom: theme.spacing.s },
+  forgotPasswordContainer: { alignSelf: 'flex-end', marginTop: -theme.spacing.s, marginBottom: theme.spacing.m },
+  forgotPasswordText: { color: theme.colors.primary, fontSize: 13, fontFamily: theme.typography.bodyFontBold },
+  
+  // Footer & Button Styles
   footer: { marginTop: 'auto' },
-  googleButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.button, height: 52, marginBottom: theme.spacing.m },
+  
+  // Divider Styles
+  dividerContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: theme.spacing.l },
+  dividerLine: { flex: 1, height: 1, backgroundColor: theme.colors.border },
+  dividerText: { marginHorizontal: theme.spacing.m, color: theme.colors.textLight, fontFamily: theme.typography.bodyFont, fontSize: 13 },
+  
+  // Social Auth Styles
+  googleButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.button, height: 52, marginBottom: theme.spacing.l },
   googleIcon: { width: 24, height: 24, marginRight: theme.spacing.m },
   googleButtonText: { color: theme.colors.textDark, fontSize: 16, fontFamily: theme.typography.bodyFontBold },
-  signupRow: { flexDirection: 'row', justifyContent: 'center', marginTop: theme.spacing.m },
+  
+  // Signup Row Styles
+  signupRow: { flexDirection: 'row', justifyContent: 'center', marginTop: theme.spacing.xs, marginBottom: theme.spacing.s },
   footerText: { color: theme.colors.textLight, fontSize: 14, fontFamily: theme.typography.bodyFont },
   signupText: { color: theme.colors.primary, fontSize: 14, fontFamily: theme.typography.bodyFontBold },
 });
