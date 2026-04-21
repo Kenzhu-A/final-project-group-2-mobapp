@@ -11,6 +11,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import { theme } from '../theme';
 import { Validators } from '../utils/validators';
 import { api, BASE_URL } from '../services/api'; // <-- IMPORTED BASE_URL FOR THE TEST
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -48,6 +49,14 @@ export default function LoginScreen({ navigation }: any) {
         Alert.alert('Login Error', err.message);
       }
     }
+
+    const result = await api.login(email, password);
+        
+        // NEW: Save the user ID to the device storage!
+        await AsyncStorage.setItem('userId', result.session.user.id);
+        
+        setIsLoading(false);
+        navigation.navigate('Home');
   };
 
   const handleGoogleLogin = async () => {

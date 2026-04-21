@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // <-- IMPORT THIS
 import { theme } from '../theme';
 
 interface Props {
@@ -12,13 +13,19 @@ const NAV_ITEMS = [
   { id: 'home', icon: 'home-outline', activeIcon: 'home', label: 'Home' },
   { id: 'search', icon: 'search-outline', activeIcon: 'search', label: 'Search' },
   { id: 'add', icon: 'add-circle-outline', activeIcon: 'add-circle', label: 'Add', isCenter: true },
-  { id: 'notifications', icon: 'notifications-outline', activeIcon: 'notifications', label: 'Alerts' },
+  { id: 'messages', icon: 'chatbubbles-outline', activeIcon: 'chatbubbles', label: 'Chat' },
   { id: 'profile', icon: 'person-outline', activeIcon: 'person', label: 'Profile' },
 ];
 
 export default function BottomNavBar({ activeTab, setActiveTab }: Props) {
+  const insets = useSafeAreaInsets(); // <-- GRAB SYSTEM INSETS
+
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container, 
+      // Add exact system padding to prevent overlap with Android/iOS gesture bars
+      { paddingBottom: Math.max(insets.bottom, Platform.OS === 'ios' ? 20 : 15) } 
+    ]}>
       {NAV_ITEMS.map((item) => {
         const isActive = activeTab === item.id;
         return (
@@ -58,8 +65,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     backgroundColor: theme.colors.surface,
     paddingHorizontal: 15,
-    paddingVertical: 10,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 15,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
   },

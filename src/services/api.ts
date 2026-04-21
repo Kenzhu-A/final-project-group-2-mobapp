@@ -40,5 +40,19 @@ export const api = {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Failed to initialize Google login');
     return data.url;
+  },
+
+  // NEW: Fetch all users to chat with
+  getUsers: async (currentUserId: string) => {
+    const response = await fetch(`${BASE_URL}/messages/users/${currentUserId}`);
+    if (!response.ok) throw new Error('Failed to fetch users');
+    return await response.json();
+  },
+
+  // NEW: Fetch chat history
+  getMessages: async (user1: string, user2: string) => {
+    const response = await fetch(`${BASE_URL}/messages/history/${user1}/${user2}`);
+    if (!response.ok) throw new Error('Failed to fetch messages');
+    return await response.json();
   }
 };
