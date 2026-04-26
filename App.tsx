@@ -4,7 +4,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
 import { DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
-import { SafeAreaProvider } from 'react-native-safe-area-context'; // <-- ADDED THIS
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { ThemeProvider } from './src/context/ThemeContext'; // <-- ADDED THEME PROVIDER
 
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
@@ -12,6 +14,12 @@ import HomeScreen from './src/screens/HomeScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import OtpVerificationScreen from './src/screens/OtpVerificationScreen';
 import ChatScreen from './src/screens/ChatScreen';
+
+import MyPostsScreen from './src/screens/MyPostsScreen';
+import SavedPostsScreen from './src/screens/SavedPostsScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen'; // <-- NEW
+import ChangePasswordScreen from './src/screens/ChangePasswordScreen'; // <-- NEW
 
 const Stack = createNativeStackNavigator();
 
@@ -25,25 +33,31 @@ export default function App() {
   if (!fontsLoaded) return null;
 
   return (
-    <SafeAreaProvider> {/* <-- WRAPPED THE APP */}
-      <NavigationContainer>
-        <Stack.Navigator 
-          initialRouteName="Login"
-          screenOptions={{ 
-            headerShown: false,
-            animation: 'fade', 
-            gestureEnabled: false 
-          }}
-        >
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Signup" component={SignupScreen} />
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          <Stack.Screen name="OtpVerification" component={OtpVerificationScreen} />
-          <Stack.Screen name="ChatScreen" component={ChatScreen} />
-        </Stack.Navigator>
-        <StatusBar style="dark" />
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <ThemeProvider> {/* Wrap everything in the ThemeProvider */}
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <Stack.Navigator 
+            initialRouteName="Login"
+            screenOptions={{ headerShown: false, animation: 'fade', gestureEnabled: false }}
+          >
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Signup" component={SignupScreen} />
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="OtpVerification" component={OtpVerificationScreen} />
+            <Stack.Screen name="ChatScreen" component={ChatScreen} />
+            
+            <Stack.Screen name="MyPostsScreen" component={MyPostsScreen} />
+            <Stack.Screen name="SavedPostsScreen" component={SavedPostsScreen} />
+            <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
+            
+            {/* REGISTER THE NEW SCREENS */}
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+          </Stack.Navigator>
+          <StatusBar style="auto" />
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }

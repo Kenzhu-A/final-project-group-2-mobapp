@@ -54,5 +54,66 @@ export const api = {
     const response = await fetch(`${BASE_URL}/messages/history/${user1}/${user2}`);
     if (!response.ok) throw new Error('Failed to fetch messages');
     return await response.json();
-  }
+  },
+
+  // Add these inside your export const api = { ... } block:
+  
+  createPetPost: async (petData: any) => {
+    const response = await fetch(`${BASE_URL}/pets/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(petData),
+    });
+    if (!response.ok) throw new Error('Failed to create post');
+    return await response.json();
+  },
+
+  getAllPets: async () => {
+    const response = await fetch(`${BASE_URL}/pets`);
+    if (!response.ok) throw new Error('Failed to fetch pets');
+    return await response.json();
+  },
+
+  // Fetch user details for the profile
+  getUserProfile: async (userId: string) => {
+    const response = await fetch(`${BASE_URL}/users/${userId}`);
+    if (!response.ok) throw new Error('Failed to fetch user data');
+    return await response.json();
+  },
+
+  // Upload Avatar
+  uploadAvatar: async (formData: FormData) => {
+    const response = await fetch(`${BASE_URL}/users/avatar`, {
+      method: 'POST',
+      body: formData,
+      // NOTE: Do not set Content-Type header manually when using FormData in React Native! 
+      // Fetch will automatically set the correct multi-part boundary.
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Avatar upload failed');
+    return data.avatar_url;
+  },
+
+  updateProfile: async (userId: string, fullName: string) => {
+    const response = await fetch(`${BASE_URL}/users/update-profile`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, full_name: fullName }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    return data;
+  },
+
+  updatePassword: async (userId: string, newPassword: string) => {
+    const response = await fetch(`${BASE_URL}/users/update-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, newPassword }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    return data;
+  },
 };
+
