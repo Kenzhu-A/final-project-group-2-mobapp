@@ -1,41 +1,40 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TextInputProps, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props extends TextInputProps {
   label: string;
   error?: string;
-  isPassword?: boolean; // NEW: Triggers the eye icon toggle
+  isPassword?: boolean;
 }
 
 export default function CustomInput({ label, error, isPassword, ...props }: Props) {
+  const { colors } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  // If it's a password field, toggle visibility. Otherwise, fallback to whatever secureTextEntry is passed.
   const secureEntry = isPassword ? !isPasswordVisible : props.secureTextEntry;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>{label}</Text>
       
-      {/* Moved borders to a wrapper view to hold both the input and the icon */}
       <View style={[
         styles.inputWrapper, 
-        isFocused && styles.inputWrapperFocused, 
-        error ? styles.inputError : null
+        { backgroundColor: colors.surface, borderColor: colors.border },
+        isFocused && { borderColor: colors.primary }, 
+        error ? { borderColor: '#dc3545' } : null
       ]}>
         <TextInput
-          style={styles.input}
-          placeholderTextColor={theme.colors.border}
+          style={[styles.input, { color: colors.textPrimary }]}
+          placeholderTextColor={colors.textSecondary}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           secureTextEntry={secureEntry}
           {...props}
         />
         
-        {/* The Eye Icon Toggle */}
         {isPassword && (
           <TouchableOpacity 
             style={styles.eyeIconContainer}
@@ -45,47 +44,21 @@ export default function CustomInput({ label, error, isPassword, ...props }: Prop
             <Ionicons 
               name={isPasswordVisible ? 'eye-outline' : 'eye-off-outline'} 
               size={20} 
-              color={theme.colors.textLight} 
+              color={colors.textSecondary} 
             />
           </TouchableOpacity>
         )}
       </View>
-      
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: theme.spacing.m },
-  label: { 
-    fontSize: theme.typography.labelSize, 
-    color: theme.colors.textLight, 
-    marginBottom: theme.spacing.xs, 
-    fontFamily: theme.typography.bodyFontBold 
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 44, // STRICT: 40-44dp
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.input,
-    paddingHorizontal: theme.spacing.m,
-  },
-  inputWrapperFocused: { borderColor: theme.colors.primary },
-  inputError: { borderColor: theme.colors.error },
-  input: {
-    flex: 1,
-    height: '100%',
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.bodyFont,
-  },
-  eyeIconContainer: {
-    paddingLeft: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: { color: theme.colors.error, fontSize: 12, marginTop: 4, fontFamily: theme.typography.bodyFont },
+  container: { marginBottom: 16 },
+  label: { fontSize: 14, marginBottom: 8, fontFamily: 'DMSans_700Bold' },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', height: 48, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 16 },
+  input: { flex: 1, height: '100%', fontFamily: 'DMSans_400Regular' },
+  eyeIconContainer: { paddingLeft: 10, justifyContent: 'center', alignItems: 'center' },
+  errorText: { color: '#dc3545', fontSize: 12, marginTop: 4, fontFamily: 'DMSans_400Regular' },
 });

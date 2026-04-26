@@ -1,41 +1,38 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { 
-  View, Text, StyleSheet, BackHandler, 
-  LayoutAnimation, UIManager, Platform, FlatList, 
-  TouchableOpacity, ActivityIndicator, Image, ScrollView
-} from 'react-native';
+import { View, Text, StyleSheet, BackHandler, FlatList, TouchableOpacity, ActivityIndicator, Image, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useTheme } from '../context/ThemeContext';
 
 import BottomNavBar from '../components/BottomNavBar';
 import CustomInput from '../components/CustomInput';
 import PrimaryButton from '../components/PrimaryButton';
-import ProfileScreen from './ProfileScreen'; // <-- 1. WE IMPORT THE NEW PROFILE SCREEN HERE
-import { theme } from '../theme';
+
+import ProfileScreen from './ProfileScreen';
+import PetFeedScreen from './PetFeedScreen'; 
+import PetAdoptScreen from './PetAdoptScreen'; 
+
+import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
-const MOCK_POSTS = [
-  { id: '1', petName: 'Buddy (Golden Retriever)', location: 'Santa Rosa, Laguna', time: '2 hours ago' },
-  { id: '2', petName: 'Luna (Siamese Cat)', location: 'Biñan, Laguna', time: '5 hours ago' },
-];
-
 export default function HomeScreen({ navigation }: any) {
-  const [activeTab, setActiveTab] = useState('home');
+  const { colors, resetTheme } = useTheme();
+  
+  const [activeTab, setActiveTab] = useState('feed'); 
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const { isDarkMode, colors } = useTheme();
 
+  const [postType, setPostType] = useState<'general' | 'adoption'>('general');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [petForm, setPetForm] = useState({ petName: '', breed: '', age: '', location: '', description: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [generalDesc, setGeneralDesc] = useState('');
+  const [petForm, setPetForm] = useState({ 
+    petName: '', breed: '', age: '', location: '', description: '', medicalHistory: '', behavior: '', personality: '' 
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -49,40 +46,38 @@ export default function HomeScreen({ navigation }: any) {
     const fetchUsers = async () => {
       if (activeTab === 'messages') {
         setLoadingUsers(true);
-        const storedUserId = await AsyncStorage.getItem('userId');
-        setCurrentUserId(storedUserId);
-        if (storedUserId) {
-          try {
+        try {
+          const storedUserId = await AsyncStorage.getItem('userId');
+          setCurrentUserId(storedUserId);
+          if (storedUserId) {
             const data = await api.getUsers(storedUserId);
             setUsers(data);
-          } catch (e) { console.error(e); }
+          }
+        } catch (e) { 
+          console.error("Fetch users error:", e); 
+        } finally {
+          setLoadingUsers(false);
         }
-        setLoadingUsers(false);
       }
     };
     fetchUsers();
   }, [activeTab]);
 
   const handleTabChange = (tab: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setActiveTab(tab);
   };
 
   const handleSignOut = async () => {
     await AsyncStorage.removeItem('userId');
+    await resetTheme();
     navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
   };
 
   const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permissionResult.granted === false) {
-      alert("Permission to access gallery is required!");
-      return;
-    }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'], // FIXED WARNING
       allowsEditing: true,
-      aspect: [4, 3],
+      aspect: postType === 'general' ? [1, 1] : [4, 3],
       quality: 0.8,
     });
     if (!result.canceled) {
@@ -90,67 +85,147 @@ export default function HomeScreen({ navigation }: any) {
     }
   };
 
-  const currentBg = isDarkMode ? '#121212' : theme.colors.background;
-  const currentCardBg = isDarkMode ? '#1E1E1E' : theme.colors.surface;
-  const currentText = isDarkMode ? '#FFFFFF' : theme.colors.textDark;
-  const currentSubtext = isDarkMode ? '#AAAAAA' : theme.colors.textLight;
-  const currentBorder = isDarkMode ? '#333333' : theme.colors.border;
+  const uploadImageIfSelected = async (): Promise<string | null> => {
+    if (!selectedImage) return null;
+    const filename = selectedImage.split('/').pop();
+    const match = /\.(\w+)$/.exec(filename || '');
+    const type = match ? `image/${match[1]}` : `image`;
+
+    const formData = new FormData();
+    formData.append('post_image', { uri: selectedImage, name: filename, type } as any);
+    return await api.uploadPostImage(formData);
+  };
+
+  const handleSubmitGeneralPost = async () => {
+    if (!generalDesc && !selectedImage) {
+      Alert.alert('Empty Post', 'Please write a description or select an image.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      const uploadedImageUrl = await uploadImageIfSelected();
+
+      await api.createGeneralPost({
+        owner_id: userId,
+        description: generalDesc,
+        image_url: uploadedImageUrl
+      });
+      
+      Alert.alert('Success!', 'Posted to the community feed.');
+      setGeneralDesc(''); setSelectedImage(null); setActiveTab('feed');
+    } catch (e: any) { Alert.alert('Error', e.message); } 
+    finally { setIsSubmitting(false); }
+  };
+
+  const handleSubmitAdoptionPost = async () => {
+    if (!petForm.petName || !petForm.location) {
+      Alert.alert('Missing Details', 'Please fill in at least the pet name and location.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      const uploadedImageUrl = await uploadImageIfSelected();
+
+      await api.createPetPost({
+        owner_id: userId, image_url: uploadedImageUrl,
+        pet_name: petForm.petName, breed: petForm.breed, age: petForm.age, location: petForm.location, 
+        description: petForm.description, medical_history: petForm.medicalHistory, behavior: petForm.behavior, personality: petForm.personality
+      });
+      
+      Alert.alert('Success!', 'Pet listed for adoption.');
+      setPetForm({ petName: '', breed: '', age: '', location: '', description: '', medicalHistory: '', behavior: '', personality: '' });
+      setSelectedImage(null); setActiveTab('adopt'); 
+    } catch (e: any) { Alert.alert('Error', e.message); } 
+    finally { setIsSubmitting(false); }
+  };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentBg }]} edges={['top']}>
-      <View style={[styles.contentContainer, { backgroundColor: currentBg }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
         
-        {/* TAB 1: HOME */}
-        {activeTab === 'home' && (
-          <View style={styles.tabContent}>
-            <Text style={[styles.headerTitle, { color: currentText }]}>Adoption Feed</Text>
-            <FlatList
-              data={MOCK_POSTS}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={{ paddingBottom: 110 }}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <View style={[styles.postCard, { backgroundColor: currentCardBg, borderColor: currentBorder }]}>
-                  <View style={styles.postImagePlaceholder}>
-                    <Ionicons name="image-outline" size={40} color="#FFF" />
+        {activeTab === 'feed' && <View style={styles.tabContent}><PetFeedScreen navigation={navigation} /></View>}
+        {activeTab === 'adopt' && <View style={styles.tabContent}><PetAdoptScreen navigation={navigation} /></View>}
+
+        {activeTab === 'add' && (
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+            <ScrollView contentContainerStyle={[styles.scrollTabContent, { paddingBottom: 110 }]} showsVerticalScrollIndicator={false}>
+              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Create Post</Text>
+              
+              <View style={[styles.toggleContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <TouchableOpacity 
+                  style={[styles.toggleBtn, postType === 'general' && { backgroundColor: colors.primary }]} 
+                  onPress={() => setPostType('general')}
+                >
+                  <Text style={[styles.toggleText, { color: postType === 'general' ? '#FFF' : colors.textPrimary }]}>General Post</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.toggleBtn, postType === 'adoption' && { backgroundColor: colors.primary }]} 
+                  onPress={() => setPostType('adoption')}
+                >
+                  <Text style={[styles.toggleText, { color: postType === 'adoption' ? '#FFF' : colors.textPrimary }]}>Adoption Listing</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <TouchableOpacity style={[styles.imagePickerContainer, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={pickImage}>
+                {selectedImage ? (
+                  <Image source={{ uri: selectedImage }} style={styles.previewImage} />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Ionicons name="camera-outline" size={40} color={colors.textSecondary} />
+                    <Text style={[styles.subtitle, { color: colors.textSecondary, marginTop: 8 }]}>Tap to add a photo</Text>
                   </View>
-                  <View style={styles.postDetails}>
-                    <Text style={[styles.postTitle, { color: currentText }]}>{item.petName}</Text>
-                    <Text style={[styles.postSubtitle, { color: currentSubtext }]}><Ionicons name="location-outline" /> {item.location}</Text>
-                    <Text style={[styles.postTime, { color: currentSubtext }]}>{item.time}</Text>
-                  </View>
-                  <TouchableOpacity>
-                    <Ionicons name="bookmark-outline" size={24} color={theme.colors.primary} />
-                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+
+              {postType === 'general' && (
+                <View>
+                  <CustomInput label="Caption" placeholder="What's on your mind?" value={generalDesc} onChangeText={setGeneralDesc} multiline />
+                  <PrimaryButton title="Share to Feed" onPress={handleSubmitGeneralPost} loading={isSubmitting} />
                 </View>
               )}
-            />
-          </View>
+
+              {postType === 'adoption' && (
+                <View>
+                  <CustomInput label="Pet Name *" placeholder="e.g., Buddy" value={petForm.petName} onChangeText={t => setPetForm({...petForm, petName: t})} />
+                  <CustomInput label="Breed" placeholder="e.g., Golden Retriever" value={petForm.breed} onChangeText={t => setPetForm({...petForm, breed: t})} />
+                  <CustomInput label="Age" placeholder="e.g., 2 years" value={petForm.age} onChangeText={t => setPetForm({...petForm, age: t})} />
+                  <CustomInput label="Location *" placeholder="e.g., Santa Rosa, Laguna" value={petForm.location} onChangeText={t => setPetForm({...petForm, location: t})} />
+                  <CustomInput label="About / Description" placeholder="Describe the pet..." value={petForm.description} onChangeText={t => setPetForm({...petForm, description: t})} multiline />
+                  <CustomInput label="Medical History" placeholder="Vaccinated? Neutered?" value={petForm.medicalHistory} onChangeText={t => setPetForm({...petForm, medicalHistory: t})} multiline />
+                  <CustomInput label="Behavior" placeholder="Good with kids? Playful?" value={petForm.behavior} onChangeText={t => setPetForm({...petForm, behavior: t})} multiline />
+                  <CustomInput label="Personality" placeholder="Energetic? Shy?" value={petForm.personality} onChangeText={t => setPetForm({...petForm, personality: t})} multiline />
+                  <View style={{ marginBottom: 32, marginTop: 16 }}>
+                    <PrimaryButton title="Post for Adoption" onPress={handleSubmitAdoptionPost} loading={isSubmitting} />
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+          </KeyboardAvoidingView>
         )}
 
-        {/* TAB 2: MESSAGES */}
         {activeTab === 'messages' && (
-          <View style={styles.tabContent}>
-            <Text style={[styles.headerTitle, { color: currentText }]}>Messages</Text>
-            {loadingUsers ? (
-              <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 50 }} />
+          <View style={[styles.tabContent, { paddingHorizontal: 16 }]}>
+             <Text style={[styles.headerTitle, { color: colors.textPrimary, paddingHorizontal: 0 }]}>Messages</Text>
+             {loadingUsers ? (
+              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />
             ) : (
               <FlatList
                 data={users}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={{ paddingBottom: 110 }}
                 showsVerticalScrollIndicator={false}
+                ListEmptyComponent={<Text style={{color: colors.textSecondary, textAlign: 'center', marginTop: 20}}>No users found to message.</Text>}
                 renderItem={({ item }) => (
                   <TouchableOpacity 
-                    style={[styles.userCard, { backgroundColor: currentCardBg, borderColor: currentBorder }]}
-                    onPress={() => navigation.navigate('ChatScreen', { 
-                      receiverId: item.id, receiverName: item.full_name || item.email, senderId: currentUserId
-                    })}
+                    style={[styles.userCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                    onPress={() => navigation.navigate('ChatScreen', { receiverId: item.id, receiverName: item.full_name || item.email, senderId: currentUserId })}
                   >
                     <View style={styles.avatarPlaceholder}><Ionicons name="person" size={24} color="#FFF" /></View>
                     <View>
-                      <Text style={[styles.userName, { color: currentText }]}>{item.full_name || 'Anonymous User'}</Text>
-                      <Text style={[styles.userEmail, { color: currentSubtext }]}>{item.email}</Text>
+                      <Text style={[styles.userName, { color: colors.textPrimary }]}>{item.full_name || 'Anonymous User'}</Text>
+                      <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{item.email}</Text>
                     </View>
                   </TouchableOpacity>
                 )}
@@ -159,58 +234,10 @@ export default function HomeScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* TAB 3: ADD POST */}
-        {activeTab === 'add' && (
-          <ScrollView contentContainerStyle={[styles.scrollTabContent, { paddingBottom: 110 }]} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.headerTitle, { color: currentText }]}>Create New Post</Text>
-            <TouchableOpacity style={[styles.imagePickerContainer, { backgroundColor: currentCardBg, borderColor: currentBorder }]} onPress={pickImage}>
-              {selectedImage ? (
-                <Image source={{ uri: selectedImage }} style={styles.previewImage} />
-              ) : (
-                <View style={styles.imagePlaceholder}>
-                  <Ionicons name="camera-outline" size={40} color={currentSubtext} />
-                  <Text style={[styles.subtitle, { color: currentSubtext, marginTop: 8 }]}>Tap to upload a photo</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            <CustomInput label="Pet Name" placeholder="e.g., Buddy" value={petForm.petName} onChangeText={t => setPetForm({...petForm, petName: t})} />
-            <CustomInput label="Breed" placeholder="e.g., Golden Retriever" value={petForm.breed} onChangeText={t => setPetForm({...petForm, breed: t})} />
-            <CustomInput label="Age" placeholder="e.g., 2 years" value={petForm.age} onChangeText={t => setPetForm({...petForm, age: t})} />
-            <CustomInput label="Location" placeholder="e.g., Santa Rosa, Laguna" value={petForm.location} onChangeText={t => setPetForm({...petForm, location: t})} />
-            <View style={{ marginBottom: theme.spacing.xl, marginTop: theme.spacing.m }}>
-              <PrimaryButton title="Post for Adoption" onPress={() => console.log("Submit Post:", petForm, selectedImage)} />
-            </View>
-          </ScrollView>
-        )}
-
-        {/* TAB 4: SAVED POSTS */}
-        {activeTab === 'saved' && (
-          <View style={styles.tabContent}>
-            <Text style={[styles.headerTitle, { color: currentText }]}>Saved Pets</Text>
-            <ScrollView contentContainerStyle={{ paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
-              <View style={[styles.postCard, { backgroundColor: currentCardBg, borderColor: currentBorder }]}>
-                <View style={styles.postImagePlaceholder}><Ionicons name="image-outline" size={40} color="#FFF" /></View>
-                <View style={styles.postDetails}>
-                  <Text style={[styles.postTitle, { color: currentText }]}>{MOCK_POSTS[0].petName}</Text>
-                  <Text style={[styles.postSubtitle, { color: currentSubtext }]}><Ionicons name="location-outline" /> {MOCK_POSTS[0].location}</Text>
-                </View>
-                <Ionicons name="bookmark" size={24} color={theme.colors.primary} />
-              </View>
-            </ScrollView>
-          </View>
-        )}
-
-        {/* TAB 5: PROFILE (REPLACED WITH THE NEW COMPONENT) */}
         {activeTab === 'profile' && (
-          <ProfileScreen 
-            navigation={navigation} 
-            isDarkMode={isDarkMode} 
-            handleSignOut={handleSignOut} 
-          />
+          <ProfileScreen navigation={navigation} handleSignOut={handleSignOut} />
         )}
-
       </View>
-      
       <BottomNavBar activeTab={activeTab} setActiveTab={handleTabChange} />
     </SafeAreaView>
   );
@@ -219,21 +246,18 @@ export default function HomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   contentContainer: { flex: 1 },
-  tabContent: { flex: 1, paddingHorizontal: theme.spacing.m, paddingTop: theme.spacing.m },
-  scrollTabContent: { paddingHorizontal: theme.spacing.m, paddingTop: theme.spacing.m },
-  headerTitle: { fontSize: 28, fontFamily: theme.typography.headingFont, marginBottom: theme.spacing.m },
-  subtitle: { fontSize: 16, fontFamily: theme.typography.bodyFont, textAlign: 'center' },
-  postCard: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 16, borderWidth: 1 },
-  postImagePlaceholder: { width: 70, height: 70, borderRadius: 8, backgroundColor: '#D1D5DB', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  postDetails: { flex: 1 },
-  postTitle: { fontSize: 16, fontFamily: theme.typography.bodyFontBold },
-  postSubtitle: { fontSize: 13, fontFamily: theme.typography.bodyFont, marginTop: 4 },
-  postTime: { fontSize: 11, fontFamily: theme.typography.bodyFont, marginTop: 4 },
-  userCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1 },
-  avatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: theme.colors.primary, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  userName: { fontSize: 16, fontFamily: theme.typography.bodyFontBold },
-  userEmail: { fontSize: 13, fontFamily: theme.typography.bodyFont, marginTop: 2 },
-  imagePickerContainer: { height: 200, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', marginBottom: theme.spacing.m, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
+  tabContent: { flex: 1, paddingTop: 16 },
+  scrollTabContent: { paddingHorizontal: 16, paddingTop: 16 },
+  headerTitle: { fontSize: 28, fontFamily: 'DMSerifDisplay_400Regular', marginBottom: 16, paddingHorizontal: 16 },
+  subtitle: { fontSize: 16, fontFamily: 'DMSans_400Regular', textAlign: 'center' },
+  toggleContainer: { flexDirection: 'row', borderRadius: 12, borderWidth: 1, marginBottom: 20, overflow: 'hidden' },
+  toggleBtn: { flex: 1, paddingVertical: 12, alignItems: 'center' },
+  toggleText: { fontSize: 14, fontFamily: 'DMSans_700Bold' },
+  imagePickerContainer: { height: 250, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', marginBottom: 16, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
   previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  userCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1 },
+  avatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#F26419', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  userName: { fontSize: 16, fontFamily: 'DMSans_700Bold' },
+  userEmail: { fontSize: 13, fontFamily: 'DMSans_400Regular', marginTop: 2 },
 });

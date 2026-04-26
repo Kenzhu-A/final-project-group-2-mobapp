@@ -31,7 +31,31 @@ export const api = {
     if (!response.ok) throw new Error(data.error || 'Registration failed');
     return data;
   },
+  forgotPassword: async (email: string) => {
+    const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    return data;
+  },
 
+  // --- HARDENED OTP VERIFICATION ---
+  verifyOtp: async (email: string, otp: string) => {
+    const response = await fetch(`${BASE_URL}/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        // Fallback safety to ensure it throws a clear string, not an undefined object
+        throw new Error(data?.error || 'Failed to verify OTP');
+    }
+    return data;
+  },
   // 3. Google Login Link
   getGoogleAuthUrl: async () => {
     const response = await fetch(`${BASE_URL}/auth/google`, {
@@ -114,6 +138,58 @@ export const api = {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
     return data;
+  },
+  // --- NEW: GENERAL POSTS API ---
+  createGeneralPost: async (postData: any) => {
+    const response = await fetch(`${BASE_URL}/posts/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(postData),
+    });
+    if (!response.ok) throw new Error('Failed to create general post');
+    return await response.json();
+  },
+
+  getGeneralPosts: async () => {
+    const response = await fetch(`${BASE_URL}/posts`);
+    if (!response.ok) throw new Error('Failed to fetch general posts');
+    return await response.json();
+  },
+
+  uploadPostImage: async (formData: FormData) => {
+    const response = await fetch(`${BASE_URL}/posts/image`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Image upload failed');
+    return data.image_url;
+  },
+
+  updateLikeCount: async (postId: string, increment: boolean) => {
+    const response = await fetch(`${BASE_URL}/posts/like`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ postId, increment }),
+    });
+    if (!response.ok) throw new Error('Failed to update likes');
+    return await response.json();
+  },
+
+  getComments: async (postId: string) => {
+    const response = await fetch(`${BASE_URL}/posts/${postId}/comments`);
+    if (!response.ok) throw new Error('Failed to fetch comments');
+    return await response.json();
+  },
+
+  addComment: async (postId: string, userId: string, text: string) => {
+    const response = await fetch(`${BASE_URL}/posts/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ post_id: postId, user_id: userId, text }),
+    });
+    if (!response.ok) throw new Error('Failed to add comment');
+    return await response.json();
   },
 };
 

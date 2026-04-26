@@ -6,7 +6,7 @@ import { useFonts, DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif
 import { DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ThemeProvider } from './src/context/ThemeContext'; // <-- ADDED THEME PROVIDER
+import { ThemeProvider } from './src/context/ThemeContext';
 
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
@@ -18,8 +18,14 @@ import ChatScreen from './src/screens/ChatScreen';
 import MyPostsScreen from './src/screens/MyPostsScreen';
 import SavedPostsScreen from './src/screens/SavedPostsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import EditProfileScreen from './src/screens/EditProfileScreen'; // <-- NEW
-import ChangePasswordScreen from './src/screens/ChangePasswordScreen'; // <-- NEW
+import EditProfileScreen from './src/screens/EditProfileScreen';
+import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
+import ChangeForgotPasswordScreen from './src/screens/ChangeForgotPasswordScreen';
+import MyListingsScreen from './src/screens/MyListingsScreen';
+import LikedPostsScreen from './src/screens/LikedPostsScreen';
+
+// We import the config just to initialize it on app start
+import './src/utils/notifications'; 
 
 const Stack = createNativeStackNavigator();
 
@@ -33,7 +39,7 @@ export default function App() {
   if (!fontsLoaded) return null;
 
   return (
-    <ThemeProvider> {/* Wrap everything in the ThemeProvider */}
+    <ThemeProvider>
       <SafeAreaProvider>
         <NavigationContainer>
           <Stack.Navigator 
@@ -50,10 +56,11 @@ export default function App() {
             <Stack.Screen name="MyPostsScreen" component={MyPostsScreen} />
             <Stack.Screen name="SavedPostsScreen" component={SavedPostsScreen} />
             <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
-            
-            {/* REGISTER THE NEW SCREENS */}
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+            <Stack.Screen name="ChangeForgotPasswordScreen" component={ChangeForgotPasswordScreen} />
+            <Stack.Screen name="MyListingsScreen" component={MyListingsScreen} />
+            <Stack.Screen name="LikedPostsScreen" component={LikedPostsScreen} />
           </Stack.Navigator>
           <StatusBar style="auto" />
         </NavigationContainer>

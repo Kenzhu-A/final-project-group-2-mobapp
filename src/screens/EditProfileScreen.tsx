@@ -8,7 +8,6 @@ import * as ImagePicker from 'expo-image-picker';
 import CustomInput from '../components/CustomInput';
 import PrimaryButton from '../components/PrimaryButton';
 import { useTheme } from '../context/ThemeContext';
-import { theme } from '../theme';
 import { api } from '../services/api';
 
 export default function EditProfileScreen({ navigation }: any) {
@@ -42,14 +41,12 @@ export default function EditProfileScreen({ navigation }: any) {
       Alert.alert('Permission Denied', 'Camera roll access is required.');
       return;
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.5,
     });
-
     if (!result.canceled) {
       setUploading(true);
       try {
@@ -78,15 +75,16 @@ export default function EditProfileScreen({ navigation }: any) {
     try {
       const userId = await AsyncStorage.getItem('userId');
       if (!userId) return;
-
       await api.updateProfile(userId, fullName);
-
       Alert.alert('Success', 'Profile updated successfully!');
+      
+      // Going back automatically triggers the ProfileScreen to re-fetch the new data
       navigation.goBack();
     } catch (error: any) {
       Alert.alert('Error', error.message);
     }
   };
+
   if (loading) return <View style={[styles.safeArea, { backgroundColor: colors.background, justifyContent: 'center' }]}><ActivityIndicator size="large" color={colors.primary} /></View>;
 
   return (
@@ -114,7 +112,6 @@ export default function EditProfileScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
 
-          {/* Note: CustomInput would also need to be updated to use the ThemeContext to perfectly sync colors */}
           <CustomInput label="Full Name" placeholder="Your Name" value={fullName} onChangeText={setFullName} />
           <CustomInput label="Email Address" placeholder="Your Email" value={user?.email || ''} editable={false} />
           
@@ -129,10 +126,10 @@ export default function EditProfileScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.spacing.m, paddingVertical: 12, borderBottomWidth: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
   backBtn: { padding: 4 },
-  headerTitle: { fontSize: 20, fontFamily: theme.typography.headingFont },
-  content: { padding: theme.spacing.xl },
+  headerTitle: { fontSize: 20, fontFamily: 'DMSerifDisplay_400Regular' },
+  content: { padding: 24 },
   avatarContainer: { alignSelf: 'center', position: 'relative', marginBottom: 30, marginTop: 10 },
   avatarImage: { width: 110, height: 110, borderRadius: 55, borderWidth: 2 },
   editBadge: { position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 3 },

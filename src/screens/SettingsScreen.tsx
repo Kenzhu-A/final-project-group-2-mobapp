@@ -1,18 +1,28 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../context/ThemeContext'; // <-- IMPORT THEME CONTEXT
-import { theme } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { registerForPushNotificationsAsync } from '../utils/notifications'; // FIXED IMPORT PATH
 
 export default function SettingsScreen({ navigation }: any) {
-  const { isDarkMode, toggleTheme, colors } = useTheme(); // <-- USE GLOBAL THEME
-  const [pushEnabled, setPushEnabled] = useState(true);
+  const { isDarkMode, toggleTheme, colors } = useTheme(); 
+  const [pushEnabled, setPushEnabled] = useState(false);
+
+  const handleTogglePush = async (value: boolean) => {
+    setPushEnabled(value);
+    if (value === true) {
+      const token = await registerForPushNotificationsAsync();
+      if (token) {
+        Alert.alert("Success", "Push Notifications have been enabled for this device.");
+      } else {
+        setPushEnabled(false);
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      
-      {/* HEADER */}
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
@@ -25,12 +35,7 @@ export default function SettingsScreen({ navigation }: any) {
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Account Settings</Text>
 
         <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          
-          {/* Navigate to Edit Profile */}
-          <TouchableOpacity 
-            style={[styles.menuItem, { borderBottomColor: colors.border }]} 
-            onPress={() => navigation.navigate('EditProfile')}
-          >
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('EditProfile')}>
             <View style={styles.menuLeft}>
               <Ionicons name="person-outline" size={22} color={colors.textPrimary} style={styles.menuIcon} />
               <Text style={[styles.menuText, { color: colors.textPrimary }]}>Edit Profile</Text>
@@ -38,11 +43,7 @@ export default function SettingsScreen({ navigation }: any) {
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          {/* Navigate to Change Password */}
-          <TouchableOpacity 
-            style={[styles.menuItem, { borderBottomColor: colors.border }]} 
-            onPress={() => navigation.navigate('ChangePassword')}
-          >
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('ChangePassword')}>
             <View style={styles.menuLeft}>
               <Ionicons name="lock-closed-outline" size={22} color={colors.textPrimary} style={styles.menuIcon} />
               <Text style={[styles.menuText, { color: colors.textPrimary }]}>Change Password</Text>
@@ -50,16 +51,14 @@ export default function SettingsScreen({ navigation }: any) {
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          {/* Push Notifications */}
           <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
             <View style={styles.menuLeft}>
               <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} style={styles.menuIcon} />
               <Text style={[styles.menuText, { color: colors.textPrimary }]}>Push Notifications</Text>
             </View>
-            <Switch value={pushEnabled} onValueChange={setPushEnabled} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={'#FFF'} />
+            <Switch value={pushEnabled} onValueChange={handleTogglePush} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={'#FFF'} />
           </View>
 
-          {/* GLOBAL Dark Mode Toggle */}
           <View style={[styles.menuItem, { borderBottomWidth: 0 }]}>
             <View style={styles.menuLeft}>
               <Ionicons name="moon-outline" size={22} color={colors.textPrimary} style={styles.menuIcon} />
@@ -76,14 +75,14 @@ export default function SettingsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.spacing.m, paddingVertical: 12, borderBottomWidth: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
   backBtn: { padding: 4 },
-  headerTitle: { fontSize: 20, fontFamily: theme.typography.headingFont },
-  content: { padding: theme.spacing.m },
-  sectionTitle: { fontSize: 18, fontFamily: theme.typography.headingFont, marginBottom: theme.spacing.m, marginLeft: 4 },
+  headerTitle: { fontSize: 20, fontFamily: 'DMSerifDisplay_400Regular' },
+  content: { padding: 16 },
+  sectionTitle: { fontSize: 18, fontFamily: 'DMSerifDisplay_400Regular', marginBottom: 16, marginLeft: 4 },
   menuCard: { borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
   menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: 1 },
   menuLeft: { flexDirection: 'row', alignItems: 'center' },
   menuIcon: { marginRight: 12 },
-  menuText: { fontSize: 16, fontFamily: theme.typography.bodyFont },
+  menuText: { fontSize: 16, fontFamily: 'DMSans_400Regular' },
 });
