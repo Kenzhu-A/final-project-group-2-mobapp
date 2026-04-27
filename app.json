@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "pet-chats",
-    "slug": "pet-chats",
+    "name": "SnoutScout", 
+    "slug": "snoutscout",
+    "scheme": "snoutscout", 
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

@@ -1,17 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; // <-- System UI Fix
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { io, Socket } from 'socket.io-client';
-import { theme } from '../theme';
+import { useTheme } from '../context/ThemeContext'; // <-- Global Theme
 import { api, BASE_URL } from '../services/api';
 
 const SOCKET_URL = BASE_URL.replace('/api', '');
 
 export default function ChatScreen({ route, navigation }: any) {
-  const { receiverId, receiverName, senderId } = route.params;
+  const { colors } = useTheme(); 
+  
+  // Extract initialMessage passed from PetAdoptScreen
+  const { receiverId, receiverName, senderId, initialMessage } = route.params;
+  
   const [messages, setMessages] = useState<any[]>([]);
-  const [inputText, setInputText] = useState('');
+  // Automatically fill the text box if initialMessage exists!
+  const [inputText, setInputText] = useState(initialMessage || '');
+  
   const socketRef = useRef<Socket | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
@@ -27,13 +33,10 @@ export default function ChatScreen({ route, navigation }: any) {
     socketRef.current = io(SOCKET_URL);
     socketRef.current.emit('register', senderId);
 
-    // Handle Incoming Messages & Echoes
     socketRef.current.on('receive_message', (newMessage) => {
       setMessages((prev) => {
-        // 1. Prevent duplicates
         if (prev.some(msg => msg.id === newMessage.id)) return prev;
 
-        // 2. If this is an echo of a message we sent, replace our temporary optimistic bubble with the real one
         if (newMessage.sender_id === senderId) {
           const index = prev.findIndex(msg => msg.isOptimistic && msg.text === newMessage.text);
           if (index !== -1) {
@@ -43,7 +46,6 @@ export default function ChatScreen({ route, navigation }: any) {
           }
         }
         
-        // 3. Otherwise, it's a brand new message from the other person
         return [...prev, newMessage];
       });
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
@@ -58,22 +60,20 @@ export default function ChatScreen({ route, navigation }: any) {
     if (inputText.trim() === '') return;
     
     const textToSend = inputText.trim();
-    setInputText(''); // CLEAR INSTANTLY
+    setInputText(''); 
 
-    // OPTIMISTIC UPDATE: Show it on the screen immediately without waiting for the server
     const optimisticMessage = {
-      id: Math.random().toString(), // Temporary ID
+      id: Math.random().toString(),
       sender_id: senderId,
       receiver_id: receiverId,
       text: textToSend,
       created_at: new Date().toISOString(),
-      isOptimistic: true // Custom flag
+      isOptimistic: true
     };
     
     setMessages((prev) => [...prev, optimisticMessage]);
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
 
-    // Send it to the server in the background
     socketRef.current?.emit('send_message', {
       sender_id: senderId,
       receiver_id: receiverId,
@@ -84,25 +84,32 @@ export default function ChatScreen({ route, navigation }: any) {
   const renderMessage = ({ item }: { item: any }) => {
     const isMe = item.sender_id === senderId;
     return (
-      <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.theirMessage, item.isOptimistic && { opacity: 0.7 }]}>
-        <Text style={[styles.messageText, isMe ? styles.myMessageText : null]}>{item.text}</Text>
+      <View style={[
+        styles.messageBubble, 
+        isMe ? { backgroundColor: colors.primary, borderBottomRightRadius: 4, alignSelf: 'flex-end' } 
+             : { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderBottomLeftRadius: 4, alignSelf: 'flex-start' },
+        item.isOptimistic && { opacity: 0.7 }
+      ]}>
+        <Text style={[styles.messageText, isMe ? { color: '#FFF' } : { color: colors.textPrimary }]}>
+          {item.text}
+        </Text>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
         style={styles.container}
-        keyboardVerticalOffset={Platform.OS === 'android' ? 25 : 0} // <-- FIXES ANDROID KEYBOARD OVERLAP
+        keyboardVerticalOffset={Platform.OS === 'android' ? 25 : 0} 
       >
         
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={theme.colors.textDark} />
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{receiverName}</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{receiverName}</Text>
         </View>
 
         <FlatList
@@ -114,15 +121,15 @@ export default function ChatScreen({ route, navigation }: any) {
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
         />
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.background, color: colors.textPrimary }]}
             placeholder="Type a message..."
             value={inputText}
             onChangeText={setInputText}
-            placeholderTextColor={theme.colors.textLight}
+            placeholderTextColor={colors.textSecondary}
           />
-          <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+          <TouchableOpacity style={[styles.sendButton, { backgroundColor: colors.primary }]} onPress={sendMessage}>
             <Ionicons name="send" size={20} color="#FFF" />
           </TouchableOpacity>
         </View>
@@ -133,18 +140,15 @@ export default function ChatScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  safeArea: { flex: 1 },
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', padding: theme.spacing.m, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  backBtn: { marginRight: theme.spacing.m },
-  headerTitle: { fontSize: 20, fontFamily: theme.typography.headingFont, color: theme.colors.textDark },
-  chatList: { padding: theme.spacing.m, paddingBottom: theme.spacing.xl },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
+  backBtn: { marginRight: 16 },
+  headerTitle: { fontSize: 20, fontFamily: 'DMSerifDisplay_400Regular' },
+  chatList: { padding: 16, paddingBottom: 24 },
   messageBubble: { maxWidth: '80%', padding: 14, borderRadius: 20, marginBottom: 10 },
-  myMessage: { alignSelf: 'flex-end', backgroundColor: theme.colors.primary, borderBottomRightRadius: 4 },
-  theirMessage: { alignSelf: 'flex-start', backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, borderBottomLeftRadius: 4 },
-  messageText: { fontSize: 15, fontFamily: theme.typography.bodyFont, color: theme.colors.textDark },
-  myMessageText: { color: '#FFF' },
-  inputContainer: { flexDirection: 'row', padding: theme.spacing.m, backgroundColor: theme.colors.surface, borderTopWidth: 1, borderTopColor: theme.colors.border, alignItems: 'center' },
-  input: { flex: 1, backgroundColor: theme.colors.background, borderRadius: 24, paddingHorizontal: 16, height: 48, marginRight: 12, fontFamily: theme.typography.bodyFont, color: theme.colors.textDark },
-  sendButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: theme.colors.primary, justifyContent: 'center', alignItems: 'center' },
+  messageText: { fontSize: 15, fontFamily: 'DMSans_400Regular' },
+  inputContainer: { flexDirection: 'row', padding: 16, borderTopWidth: 1, alignItems: 'center' },
+  input: { flex: 1, borderRadius: 24, paddingHorizontal: 16, height: 48, marginRight: 12, fontFamily: 'DMSans_400Regular' },
+  sendButton: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center' },
 });

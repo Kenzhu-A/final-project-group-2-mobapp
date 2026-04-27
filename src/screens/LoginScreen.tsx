@@ -59,16 +59,38 @@ export default function LoginScreen({ navigation }: any) {
         navigation.navigate('Home');
   };
 
-  const handleGoogleLogin = async () => {
+ const handleGoogleLogin = async () => {
     try {
-      const authUrl = await api.getGoogleAuthUrl();
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, 'snoutscout://auth/callback');
+      setIsLoading(true);
       
-      if (result.type === 'success') {
+      // 1. Get the URL from our backend
+      const response = await api.getGoogleAuthUrl();
+      
+      // Note: Make sure to use response.url!
+      const result = await WebBrowser.openAuthSessionAsync(response.url, 'snoutscout://auth/callback');
+      
+      if (result.type === 'success' && result.url) {
+        
+        // 2. Extract the access_token hidden inside the URL string
+        const match = result.url.match(/access_token=([^&]*)/);
+        const accessToken = match ? match[1] : null;
+
+        if (!accessToken) {
+          throw new Error("Authentication failed: No token received from Google.");
+        }
+
+        // 3. Send the token to our backend to verify it and get the User ID
+        const userId = await api.verifyGoogleToken(accessToken);
+
+        // 4. Save the user ID to the phone's memory so the Home screen knows who is logged in!
+        await AsyncStorage.setItem('userId', userId);
+        
         navigation.navigate('Home');
       }
     } catch (err: any) {
       Alert.alert("Google Login Error", err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 

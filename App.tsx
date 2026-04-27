@@ -23,6 +23,7 @@ import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
 import ChangeForgotPasswordScreen from './src/screens/ChangeForgotPasswordScreen';
 import MyListingsScreen from './src/screens/MyListingsScreen';
 import LikedPostsScreen from './src/screens/LikedPostsScreen';
+import MyPetsScreen from './src/screens/MyPetsScreen';
 
 // We import the config just to initialize it on app start
 import './src/utils/notifications'; 
@@ -61,6 +62,7 @@ export default function App() {
             <Stack.Screen name="ChangeForgotPasswordScreen" component={ChangeForgotPasswordScreen} />
             <Stack.Screen name="MyListingsScreen" component={MyListingsScreen} />
             <Stack.Screen name="LikedPostsScreen" component={LikedPostsScreen} />
+            <Stack.Screen name="MyPetsScreen" component={MyPetsScreen} />
           </Stack.Navigator>
           <StatusBar style="auto" />
         </NavigationContainer>

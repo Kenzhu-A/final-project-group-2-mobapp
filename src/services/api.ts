@@ -57,14 +57,6 @@ export const api = {
     return data;
   },
   // 3. Google Login Link
-  getGoogleAuthUrl: async () => {
-    const response = await fetch(`${BASE_URL}/auth/google`, {
-      method: 'GET',
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Failed to initialize Google login');
-    return data.url;
-  },
 
   // NEW: Fetch all users to chat with
   getUsers: async (currentUserId: string) => {
@@ -190,6 +182,50 @@ export const api = {
     });
     if (!response.ok) throw new Error('Failed to add comment');
     return await response.json();
+  },
+  getMyPets: async (userId: string) => {
+    const response = await fetch(`${BASE_URL}/pets/my-pets/${userId}`);
+    if (!response.ok) throw new Error('Failed to fetch your pets');
+    return await response.json();
+  },
+
+  updatePetStatus: async (petId: string, status: string) => {
+    const response = await fetch(`${BASE_URL}/pets/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ petId, status }),
+    });
+    if (!response.ok) throw new Error('Failed to update status');
+    return await response.json();
+  },
+
+  uploadPetImage: async (formData: FormData) => {
+    const response = await fetch(`${BASE_URL}/pets/image`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Pet image upload failed');
+    return data.image_url;
+  },
+
+  // --- GOOGLE AUTH API ---
+  getGoogleAuthUrl: async (redirectTo: string) => {
+    // Send the dynamic return URL to the backend
+    const response = await fetch(`${BASE_URL}/auth/google?redirectTo=${encodeURIComponent(redirectTo)}`);
+    if (!response.ok) throw new Error('Google auth failed');
+    return await response.json();
+  },
+
+  verifyGoogleToken: async (access_token: string) => {
+    const response = await fetch(`${BASE_URL}/auth/google/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_token }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to verify Google token');
+    return data.userId;
   },
 };
 

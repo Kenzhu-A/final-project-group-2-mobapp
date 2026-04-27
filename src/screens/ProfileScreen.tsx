@@ -114,6 +114,15 @@ export default function ProfileScreen({ navigation, handleSignOut }: ProfileProp
 
       <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         
+        <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('MyPetsScreen')}>
+          <View style={styles.menuLeft}>
+            <View style={[styles.iconWrapper, { backgroundColor: colors.background }]}>
+              <Ionicons name="paw-outline" size={20} color={colors.textPrimary} />
+            </View>
+            <Text style={[styles.menuText, { color: colors.textPrimary }]}>My Pets</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+        </TouchableOpacity>
         {/* My Listings */}
         <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('MyListingsScreen')}>
           <View style={styles.menuLeft}>
