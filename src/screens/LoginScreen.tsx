@@ -11,7 +11,8 @@ import PrimaryButton from '../components/PrimaryButton';
 import { theme } from '../theme';
 import { Validators } from '../utils/validators';
 import { api, BASE_URL } from '../services/api'; // <-- IMPORTED BASE_URL FOR THE TEST
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { registerForPushNotificationsAsync } from '../utils/notifications'; // [PUSH-NOTIF]
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -43,16 +44,25 @@ export default function LoginScreen({ navigation }: any) {
       try {
         const result = await api.login(email, password);
         await AsyncStorage.setItem('userId', result.session.user.id);
-        
+        await AsyncStorage.setItem('userEmail', email); // [DELETE-CONFIRM]
+
         // Grab the role from the API result (defaults to 'user')
         const role = result.user?.role || 'user';
         await AsyncStorage.setItem('userRole', role);
-        
+
+        // [PUSH-NOTIF] best-effort: register push token without blocking login
+        (async () => {
+          try {
+            const token = await registerForPushNotificationsAsync();
+            if (token) await api.registerPushToken(result.session.user.id, token);
+          } catch (e) { console.warn('[PUSH-NOTIF] login token register skipped:', (e as any)?.message); }
+        })();
+
         // Navigate based on role!
         if (role === 'admin') {
           navigation.navigate('AdminHomeScreen');
         } else {
-          navigation.navigate('Home'); 
+          navigation.navigate('Home');
         }
       } catch (err: any) {
         Alert.alert('Login Error', err.message);
