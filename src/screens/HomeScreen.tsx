@@ -12,9 +12,10 @@ import CustomDropdown from '../components/CustomDropdown';
 import PrimaryButton from '../components/PrimaryButton';
 
 import ProfileScreen from './ProfileScreen';
-import PetFeedScreen from './PetFeedScreen'; 
-import PetAdoptScreen from './PetAdoptScreen'; 
-import PetChatsScreen from './PetChatsScreen'; // <-- NEW: Clean messaging component
+import PetChatsScreen from './PetChatsScreen';
+// [DASHBOARD-REDESIGN] new tab screens
+import DashboardScreen from './DashboardScreen';
+import SavedPetsScreen from './SavedPetsScreen';
 
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
@@ -35,7 +36,7 @@ const PERSONALITIES = ['Sweet', 'Independent', 'Clingy', 'Protective', 'Friendly
 export default function HomeScreen({ navigation }: any) {
   const { colors, resetTheme } = useTheme();
   
-  const [activeTab, setActiveTab] = useState('feed'); 
+  const [activeTab, setActiveTab] = useState('home'); // [DASHBOARD-REDESIGN]
 
   // --- POST CREATION STATE ---
   const [postType, setPostType] = useState<'general' | 'adoption'>('general');
@@ -160,9 +161,9 @@ export default function HomeScreen({ navigation }: any) {
       });
       
       Alert.alert('Success!', 'Posted to the community feed.');
-      setGeneralDesc(''); 
-      setSelectedImage(null); 
-      setActiveTab('feed');
+      setGeneralDesc('');
+      setSelectedImage(null);
+      setActiveTab('home'); // [DASHBOARD-REDESIGN]
     } catch (e: any) { Alert.alert('Error', e.message); } 
     finally { setIsSubmitting(false); }
   };
@@ -197,8 +198,8 @@ export default function HomeScreen({ navigation }: any) {
       Alert.alert('Success!', 'Pet listed for adoption.');
       setPetForm({ category: 'Dog', petName: '', breed: '', age: '', price: '', location: '', description: '', medicalHistory: '', behavior: '', personality: '' });
       setLocationQuery('');
-      setSelectedImage(null); 
-      setActiveTab('adopt'); 
+      setSelectedImage(null);
+      setActiveTab('home'); // [DASHBOARD-REDESIGN]
     } catch (e: any) { Alert.alert('Error', e.message); } 
     finally { setIsSubmitting(false); }
   };
@@ -213,8 +214,9 @@ export default function HomeScreen({ navigation }: any) {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
         
-        {activeTab === 'feed' && <View style={styles.tabContent}><PetFeedScreen navigation={navigation} /></View>}
-        {activeTab === 'adopt' && <View style={styles.tabContent}><PetAdoptScreen navigation={navigation} /></View>}
+        {/* [DASHBOARD-REDESIGN] */}
+        {activeTab === 'home' && <View style={styles.tabContent}><DashboardScreen navigation={navigation} /></View>}
+        {activeTab === 'saved' && <View style={styles.tabContent}><SavedPetsScreen navigation={navigation} /></View>}
 
         {activeTab === 'add' && (
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>

@@ -9,12 +9,13 @@ interface Props {
   setActiveTab: (tab: string) => void;
 }
 
+// [DASHBOARD-REDESIGN] new tab order: Home / Message / + / Saved / Profile
 const NAV_ITEMS = [
-  { id: 'feed', icon: 'home-outline', activeIcon: 'home', label: 'Feed' },
-  { id: 'adopt', icon: 'paw-outline', activeIcon: 'paw', label: 'Adopt' },
-  { id: 'add', icon: 'add-circle-outline', activeIcon: 'add-circle', label: 'Add', isCenter: true },
-  { id: 'messages', icon: 'chatbubbles-outline', activeIcon: 'chatbubbles', label: 'Chat' },
-  { id: 'profile', icon: 'person-outline', activeIcon: 'person', label: 'Profile' },
+  { id: 'home',     icon: 'home-outline',       activeIcon: 'home',       label: 'Home' },
+  { id: 'messages', icon: 'chatbubble-outline', activeIcon: 'chatbubble', label: 'Message' },
+  { id: 'add',      icon: 'add',                activeIcon: 'add',        label: 'Add', isCenter: true },
+  { id: 'saved',    icon: 'bookmark-outline',   activeIcon: 'bookmark',   label: 'Saved' },
+  { id: 'profile',  icon: 'person-outline',     activeIcon: 'person',     label: 'Profile' },
 ];
 
 export default function BottomNavBar({ activeTab, setActiveTab }: Props) {
