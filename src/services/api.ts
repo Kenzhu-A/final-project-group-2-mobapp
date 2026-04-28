@@ -199,14 +199,28 @@ export const api = {
     return await response.json();
   },
 
-  uploadPetImage: async (formData: FormData) => {
-    const response = await fetch(`${BASE_URL}/pets/image`, {
-      method: 'POST',
-      body: formData,
+  // [UPLOAD-PROGRESS] XHR-based so we can surface upload progress per image
+  uploadPetImage: (formData: FormData, onProgress?: (percent: number) => void): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${BASE_URL}/pets/image`);
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable && onProgress) {
+          onProgress(Math.round((event.loaded / event.total) * 100));
+        }
+      };
+      xhr.onload = () => {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300) resolve(data.image_url);
+          else reject(new Error(data.error || 'Pet image upload failed'));
+        } catch (e) {
+          reject(new Error('Pet image upload: invalid response'));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error during pet image upload'));
+      xhr.send(formData);
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Pet image upload failed');
-    return data.image_url;
   },
 
   // --- GOOGLE AUTH API ---
@@ -330,6 +344,67 @@ export const api = {
     const response = await fetch(`${BASE_URL}/admin/logs`);
     if (!response.ok) throw new Error('Failed to fetch logs');
     return await response.json();
+  },
+
+  // [SAVED-PETS]
+  savePet: async (userId: string, petId: string) => {
+    const response = await fetch(`${BASE_URL}/saved-pets`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, pet_id: petId }),
+    });
+    if (!response.ok) throw new Error('Failed to save pet');
+    return await response.json();
+  },
+
+  // [SAVED-PETS]
+  getSavedPets: async (userId: string) => {
+    const response = await fetch(`${BASE_URL}/saved-pets/${userId}`);
+    if (!response.ok) throw new Error('Failed to fetch saved pets');
+    return await response.json();
+  },
+
+  // [SAVED-PETS]
+  unsavePet: async (userId: string, petId: string) => {
+    const response = await fetch(`${BASE_URL}/saved-pets/${userId}/${petId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to unsave pet');
+  },
+
+  // [PET-EDIT]
+  updatePetPost: async (petId: string, payload: any) => {
+    const response = await fetch(`${BASE_URL}/pets/${petId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to update pet');
+    }
+    return await response.json();
+  },
+
+  // [PUSH-NOTIF]
+  registerPushToken: async (userId: string, token: string) => {
+    const response = await fetch(`${BASE_URL}/users/push-token`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, expo_push_token: token }),
+    });
+    if (!response.ok) throw new Error('Failed to register push token');
+  },
+
+  // [LIKED-POSTS]
+  likePet: async (petId: string, increment: boolean) => {
+    const response = await fetch(`${BASE_URL}/pets/${petId}/like`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ increment }),
+    });
+    if (!response.ok) throw new Error('Failed to update pet like');
+    return await response.json(); // { likes_count: number }
   },
 };
 
