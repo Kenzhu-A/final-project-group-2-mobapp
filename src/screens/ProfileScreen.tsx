@@ -145,8 +145,8 @@ export default function ProfileScreen({ navigation, handleSignOut }: ProfileProp
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
 
-        {/* Saved Posts */}
-        <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('SavedPostsScreen')}>
+        {/* [DASHBOARD-REDESIGN] Saved Posts → new SavedPetsScreen (backend-backed adoption saves) */}
+        <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Home', { initialTab: 'saved' })}>
           <View style={styles.menuLeft}>
             <View style={[styles.iconWrapper, { backgroundColor: colors.background }]}>
               <Ionicons name="bookmark-outline" size={20} color={colors.textPrimary} />
@@ -156,8 +156,8 @@ export default function ProfileScreen({ navigation, handleSignOut }: ProfileProp
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
 
-        {/* Liked Posts (NEW) */}
-        <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('LikedPostsScreen')}>
+        {/* [LIKED-POSTS] Liked Posts → new unified LikedPetsAndPostsScreen */}
+        <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('LikedPetsAndPostsScreen')}>
           <View style={styles.menuLeft}>
             <View style={[styles.iconWrapper, { backgroundColor: colors.background }]}>
               <Ionicons name="heart-outline" size={20} color={colors.textPrimary} />
