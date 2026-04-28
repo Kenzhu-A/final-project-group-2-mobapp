@@ -10,6 +10,8 @@ import BottomNavBar from '../components/BottomNavBar';
 import CustomInput from '../components/CustomInput';
 import CustomDropdown from '../components/CustomDropdown';
 import PrimaryButton from '../components/PrimaryButton';
+import { useImageUploader } from '../hooks/useImageUploader'; // [UPLOAD-PROGRESS]
+import UploadingImageTile from '../components/UploadingImageTile'; // [UPLOAD-PROGRESS]
 
 import ProfileScreen from './ProfileScreen';
 import PetChatsScreen from './PetChatsScreen';
@@ -32,6 +34,13 @@ const CAT_BREEDS = ['Puspin', 'Persian', 'Siamese', 'British Shorthair', 'Maine 
 const MEDICAL_HISTORY = ['Fully Vaccinated', 'Partially Vaccinated', 'Unvaccinated', 'Neutered/Spayed', 'Needs Medical Attention', 'Healthy (No Records)'];
 const BEHAVIORS = ['Calm', 'Energetic', 'Playful', 'Aggressive', 'Timid/Shy', 'Good with kids', 'Good with other pets'];
 const PERSONALITIES = ['Sweet', 'Independent', 'Clingy', 'Protective', 'Friendly', 'Vocal', 'Lazy'];
+// [DASHBOARD-REDESIGN] new fields
+const GENDERS = ['Male', 'Female', 'Unknown'];
+const SIZES_LIST = ['Small', 'Medium', 'Large'];
+const TAGS_LIST = [
+  'House-trained', 'Vaccinated', 'Good with kids', 'Good with other pets',
+  'Neutered/Spayed', 'Energetic', 'Calm', 'Playful', 'Friendly', 'Vocal', 'Independent',
+];
 
 export default function HomeScreen({ navigation }: any) {
   const { colors, resetTheme } = useTheme();
@@ -44,9 +53,12 @@ export default function HomeScreen({ navigation }: any) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [generalDesc, setGeneralDesc] = useState('');
-  const [petForm, setPetForm] = useState({ 
-    category: 'Dog', petName: '', breed: '', age: '', price: '', location: '', description: '', medicalHistory: '', behavior: '', personality: '' 
+  const [petForm, setPetForm] = useState({
+    category: 'Dog', petName: '', breed: '', age: '', price: '', location: '', description: '',
+    medicalHistory: '', behavior: '', personality: '',
+    gender: 'Unknown', weightKg: '', size: 'Medium', tags: [] as string[], // [DASHBOARD-REDESIGN]
   });
+  const petUploader = useImageUploader([]); // [UPLOAD-PROGRESS] multi-image for adoption form
 
   // --- LOCATION API STATE ---
   const [locationQuery, setLocationQuery] = useState('');
@@ -173,30 +185,33 @@ export default function HomeScreen({ navigation }: any) {
       Alert.alert('Missing Details', 'Please fill in all required fields (Category, Name, Breed, Age, Location).');
       return;
     }
-    if (isNaN(Number(petForm.age))) {
-      Alert.alert('Invalid Age', 'Age must contain only numbers.');
-      return;
-    }
-    if (petForm.price && isNaN(Number(petForm.price))) {
-      Alert.alert('Invalid Price', 'Price must contain only numbers.');
-      return;
-    }
+    if (isNaN(Number(petForm.age))) { Alert.alert('Invalid Age', 'Age must contain only numbers.'); return; }
+    if (petForm.price && isNaN(Number(petForm.price))) { Alert.alert('Invalid Price', 'Price must contain only numbers.'); return; }
+    if (petForm.weightKg && isNaN(Number(petForm.weightKg))) { Alert.alert('Invalid Weight', 'Weight must be a number.'); return; }
+    if (petUploader.anyUploading) { Alert.alert('Photos still uploading', 'Please wait for all photos to finish uploading.'); return; } // [UPLOAD-PROGRESS]
 
     setIsSubmitting(true);
     try {
       const userId = await AsyncStorage.getItem('userId');
-      const uploadedImageUrl = await uploadImageIfSelected();
+      // [UPLOAD-PROGRESS] use multi-image uploader; first URL is the legacy cover
+      const image_urls = petUploader.urls;
+      const cover = image_urls[0] || null;
 
       await api.createPetPost({
-        owner_id: userId, category: petForm.category, image_url: uploadedImageUrl,
-        pet_name: petForm.petName, breed: petForm.breed, 
-        age: Number(petForm.age), price: petForm.price ? Number(petForm.price) : 0, 
-        location: petForm.location, description: petForm.description, 
-        medical_history: petForm.medicalHistory, behavior: petForm.behavior, personality: petForm.personality
+        owner_id: userId, category: petForm.category,
+        image_url: cover, image_urls,                // [DASHBOARD-REDESIGN]
+        pet_name: petForm.petName, breed: petForm.breed,
+        age: Number(petForm.age), price: petForm.price ? Number(petForm.price) : 0,
+        location: petForm.location, description: petForm.description,
+        medical_history: petForm.medicalHistory, behavior: petForm.behavior, personality: petForm.personality,
+        gender: petForm.gender.toLowerCase(),        // [DASHBOARD-REDESIGN]
+        weight_kg: petForm.weightKg ? Number(petForm.weightKg) : null,
+        size: petForm.size.toLowerCase(),
+        tags: petForm.tags,
       });
       
       Alert.alert('Success!', 'Pet listed for adoption.');
-      setPetForm({ category: 'Dog', petName: '', breed: '', age: '', price: '', location: '', description: '', medicalHistory: '', behavior: '', personality: '' });
+      setPetForm({ category: 'Dog', petName: '', breed: '', age: '', price: '', location: '', description: '', medicalHistory: '', behavior: '', personality: '', gender: 'Unknown', weightKg: '', size: 'Medium', tags: [] }); // [DASHBOARD-REDESIGN]
       setLocationQuery('');
       setSelectedImage(null);
       setActiveTab('home'); // [DASHBOARD-REDESIGN]
@@ -232,9 +247,29 @@ export default function HomeScreen({ navigation }: any) {
                 </TouchableOpacity>
               </View>
               
-              <TouchableOpacity style={[styles.imagePickerContainer, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={pickImage}>
-                {selectedImage ? <Image source={{ uri: selectedImage }} style={styles.previewImage} /> : <View style={styles.imagePlaceholder}><Ionicons name="camera-outline" size={40} color={colors.textSecondary} /><Text style={[styles.subtitle, { color: colors.textSecondary, marginTop: 8 }]}>Tap to add a photo</Text></View>}
-              </TouchableOpacity>
+              {/* [UPLOAD-PROGRESS] adoption uses multi-image; general post keeps single picker */}
+              {postType === 'adoption' ? (
+                <View style={[styles.multiImageWrap, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                    {petUploader.items.map((it) => (
+                      <UploadingImageTile key={it.uri} item={it} onRemove={() => petUploader.remove(it.uri)} onRetry={() => petUploader.retry(it.uri)} />
+                    ))}
+                    {petUploader.items.length < petUploader.MAX_IMAGES && (
+                      <TouchableOpacity onPress={petUploader.pick} style={[styles.addTile, { borderColor: colors.border }]}>
+                        <Ionicons name="add" size={32} color={colors.textSecondary} />
+                        <Text style={{ color: colors.textSecondary, fontFamily: 'DMSans_400Regular', fontSize: 11, marginTop: 2 }}>Add photo</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <Text style={{ color: colors.textSecondary, fontFamily: 'DMSans_400Regular', fontSize: 12, marginTop: 4 }}>
+                    {petUploader.items.length}/{petUploader.MAX_IMAGES} photos
+                  </Text>
+                </View>
+              ) : (
+                <TouchableOpacity style={[styles.imagePickerContainer, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={pickImage}>
+                  {selectedImage ? <Image source={{ uri: selectedImage }} style={styles.previewImage} /> : <View style={styles.imagePlaceholder}><Ionicons name="camera-outline" size={40} color={colors.textSecondary} /><Text style={[styles.subtitle, { color: colors.textSecondary, marginTop: 8 }]}>Tap to add a photo</Text></View>}
+                </TouchableOpacity>
+              )}
 
               {postType === 'general' && (
                 <View>
@@ -288,9 +323,40 @@ export default function HomeScreen({ navigation }: any) {
                   <CustomDropdown label="Medical History" value={petForm.medicalHistory} options={MEDICAL_HISTORY} onSelect={(val) => setPetForm({...petForm, medicalHistory: val})} />
                   <CustomDropdown label="Behavior" value={petForm.behavior} options={BEHAVIORS} onSelect={(val) => setPetForm({...petForm, behavior: val})} />
                   <CustomDropdown label="Personality" value={petForm.personality} options={PERSONALITIES} onSelect={(val) => setPetForm({...petForm, personality: val})} />
-                  
-                  <View style={{ marginBottom: 32, marginTop: 16 }}>
-                    <PrimaryButton title="Post for Adoption" onPress={handleSubmitAdoptionPost} loading={isSubmitting} />
+
+                  {/* [DASHBOARD-REDESIGN] new adopter-relevant fields */}
+                  <CustomDropdown label="Gender" value={petForm.gender} options={GENDERS} onSelect={(val) => setPetForm({...petForm, gender: val})} />
+                  <View style={{ flexDirection: 'row' }}>
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <CustomInput label="Weight (kg)" placeholder="e.g., 12" value={petForm.weightKg} onChangeText={t => setPetForm({...petForm, weightKg: t})} keyboardType="numeric" />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 8 }}>
+                      <CustomDropdown label="Size" value={petForm.size} options={SIZES_LIST} onSelect={(val) => setPetForm({...petForm, size: val})} />
+                    </View>
+                  </View>
+
+                  <Text style={[styles.inputLabel, { color: colors.textPrimary, marginTop: 8, marginBottom: 8 }]}>Traits & tags</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
+                    {TAGS_LIST.map((tag) => {
+                      const active = petForm.tags.includes(tag);
+                      return (
+                        <TouchableOpacity
+                          key={tag}
+                          onPress={() => setPetForm({ ...petForm, tags: active ? petForm.tags.filter(t => t !== tag) : [...petForm.tags, tag] })}
+                          style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1, borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary : 'transparent', marginRight: 8, marginBottom: 8 }}
+                        >
+                          <Text style={{ color: active ? '#FFF' : colors.textPrimary, fontFamily: 'DMSans_700Bold', fontSize: 12 }}>{tag}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  <View style={{ marginBottom: 32, marginTop: 8 }}>
+                    <PrimaryButton
+                      title={petUploader.anyUploading ? 'Uploading photos…' : 'Post for Adoption'}
+                      onPress={handleSubmitAdoptionPost}
+                      loading={isSubmitting}
+                    />
                   </View>
                 </View>
               )}
@@ -334,4 +400,7 @@ const styles = StyleSheet.create({
   autocompleteInput: { height: 50, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, fontFamily: 'DMSans_400Regular' },
   autocompleteList: { position: 'absolute', top: 75, left: 0, right: 0, borderWidth: 1, borderRadius: 12, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, zIndex: 100 },
   autocompleteItem: { padding: 14, borderBottomWidth: 1 },
+  // [UPLOAD-PROGRESS]
+  multiImageWrap: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 16 },
+  addTile: { width: 80, height: 80, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', marginRight: 8, marginBottom: 8 },
 });
