@@ -9,6 +9,7 @@ export const lightTheme = {
   textSecondary: '#6C757D',
   primary: '#F26419',
   border: '#E9ECEF',
+  accent: '#0E9F6E', // [DASHBOARD-REDESIGN] green for filter button + Say Hi/Apply-to-Adopt
 };
 
 export const darkTheme = {
@@ -18,6 +19,7 @@ export const darkTheme = {
   textSecondary: '#ADB5BD',
   primary: '#F26419',
   border: '#343A40',
+  accent: '#0E9F6E', // [DASHBOARD-REDESIGN]
 };
 
 type ThemeType = typeof lightTheme;
