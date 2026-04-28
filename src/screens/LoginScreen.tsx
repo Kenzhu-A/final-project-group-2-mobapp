@@ -41,24 +41,27 @@ export default function LoginScreen({ navigation }: any) {
     if (valid) {
       setIsLoading(true);
       try {
-        await api.login(email, password);
-        setIsLoading(false);
-        navigation.navigate('Home'); 
-      } catch (err: any) {
-        setIsLoading(false);
-        Alert.alert('Login Error', err.message);
-      }
-    }
-
-    const result = await api.login(email, password);
-        
-        // NEW: Save the user ID to the device storage!
+        const result = await api.login(email, password);
         await AsyncStorage.setItem('userId', result.session.user.id);
         
+        // Grab the role from the API result (defaults to 'user')
+        const role = result.user?.role || 'user';
+        await AsyncStorage.setItem('userRole', role);
+        
+        // Navigate based on role!
+        if (role === 'admin') {
+          navigation.navigate('AdminHomeScreen');
+        } else {
+          navigation.navigate('Home'); 
+        }
+      } catch (err: any) {
+        Alert.alert('Login Error', err.message);
+      } finally {
         setIsLoading(false);
-        navigation.navigate('Home');
+      }
+    }
   };
-
+  
  const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);

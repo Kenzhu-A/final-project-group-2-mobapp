@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
-import { registerForPushNotificationsAsync } from '../utils/notifications'; // FIXED IMPORT PATH
+import { registerForPushNotificationsAsync } from '../utils/notifications';
+import { api } from '../services/api';
 
 export default function SettingsScreen({ navigation }: any) {
   const { isDarkMode, toggleTheme, colors } = useTheme(); 
@@ -19,6 +21,30 @@ export default function SettingsScreen({ navigation }: any) {
         setPushEnabled(false);
       }
     }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to permanently delete your account and all associated posts/messages? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive", 
+          onPress: async () => {
+            try {
+              const userId = await AsyncStorage.getItem('userId');
+              if (userId) await api.deleteAccount(userId);
+              await AsyncStorage.removeItem('userId');
+              navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+            } catch (e) { 
+              Alert.alert("Error", "Could not delete account."); 
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -66,8 +92,13 @@ export default function SettingsScreen({ navigation }: any) {
             </View>
             <Switch value={isDarkMode} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={'#FFF'} />
           </View>
-
         </View>
+
+        {/* DELETE ACCOUNT BUTTON */}
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
+          <Text style={styles.deleteButtonText}>Delete Account</Text>
+        </TouchableOpacity>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -85,4 +116,6 @@ const styles = StyleSheet.create({
   menuLeft: { flexDirection: 'row', alignItems: 'center' },
   menuIcon: { marginRight: 12 },
   menuText: { fontSize: 16, fontFamily: 'DMSans_400Regular' },
+  deleteButton: { marginTop: 32, padding: 16, backgroundColor: '#FDECEA', borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#F5C6C6' },
+  deleteButtonText: { color: '#D32F2F', fontFamily: 'DMSans_700Bold', fontSize: 16 },
 });

@@ -11,14 +11,12 @@ export default function GeneralPostCard({ item, colors }: any) {
   const [likesCount, setLikesCount] = useState(item.likes_count || 0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Comments State
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [postingComment, setPostingComment] = useState(false);
 
   useEffect(() => {
-    // 1. Get the specific user ID so storage doesn't bleed across accounts!
     AsyncStorage.getItem('userId').then(uid => {
       setCurrentUserId(uid);
       if (uid) {
@@ -35,24 +33,17 @@ export default function GeneralPostCard({ item, colors }: any) {
   const toggleLike = async () => {
     if (!currentUserId) return;
     const newLiked = !isLiked;
-    
-    // Instantly update UI
     setIsLiked(newLiked);
     setLikesCount((prev: number) => newLiked ? prev + 1 : Math.max(0, prev - 1));
     
     try {
-      // Actually update the Supabase Database
       await api.updateLikeCount(item.id, newLiked);
-      
-      // Update Scoped Device Memory
       const stored = await AsyncStorage.getItem(`${currentUserId}_likedPosts`);
       let likesArr = stored ? JSON.parse(stored) : [];
       if (newLiked) likesArr.push(item.id);
       else likesArr = likesArr.filter((id: string) => id !== item.id);
       await AsyncStorage.setItem(`${currentUserId}_likedPosts`, JSON.stringify(likesArr));
     } catch (e) {
-      console.error(e);
-      // Revert if API fails
       setIsLiked(!newLiked);
       setLikesCount((prev: number) => !newLiked ? prev + 1 : Math.max(0, prev - 1));
     }
@@ -62,7 +53,6 @@ export default function GeneralPostCard({ item, colors }: any) {
     if (!currentUserId) return;
     const newSaved = !isSaved;
     setIsSaved(newSaved);
-
     const stored = await AsyncStorage.getItem(`${currentUserId}_savedPosts`);
     let savedArr = stored ? JSON.parse(stored) : [];
     if (newSaved) savedArr.push(item.id);
@@ -70,7 +60,6 @@ export default function GeneralPostCard({ item, colors }: any) {
     await AsyncStorage.setItem(`${currentUserId}_savedPosts`, JSON.stringify(savedArr));
   };
 
-  // --- COMMENTS LOGIC ---
   const handleOpenComments = async () => {
     setShowComments(true);
     try {
@@ -93,11 +82,29 @@ export default function GeneralPostCard({ item, colors }: any) {
     }
   };
 
-  const handleReport = () => {
-    Alert.alert("Report Post", "Are you sure you want to report this post?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Report", style: "destructive", onPress: () => Alert.alert("Reported", "Our team will review this post.") }
-    ]);
+  const handleOptions = () => {
+    if (item.owner_id === currentUserId) {
+      Alert.alert("Manage Post", "What would you like to do?", [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete Post", 
+          style: "destructive", 
+          onPress: async () => {
+            try {
+              await api.deleteGeneralPost(item.id);
+              Alert.alert("Deleted", "Post removed. Pull to refresh your feed.");
+            } catch (e) { 
+              Alert.alert("Error", "Failed to delete."); 
+            }
+          }
+        }
+      ]);
+    } else {
+      Alert.alert("Report Post", "Are you sure you want to report this post?", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Report", style: "destructive", onPress: () => Alert.alert("Reported", "Our team will review this post.") }
+      ]);
+    }
   };
 
   return (
@@ -108,7 +115,7 @@ export default function GeneralPostCard({ item, colors }: any) {
           <Image source={item.owner?.avatar_url ? { uri: item.owner.avatar_url } : require('../../assets/adaptive-icon.png')} style={styles.avatar} />
           <Text style={[styles.userName, { color: colors.textPrimary }]}>{item.owner?.full_name || 'Anonymous User'}</Text>
         </View>
-        <TouchableOpacity onPress={handleReport}>
+        <TouchableOpacity onPress={handleOptions}>
           <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -147,10 +154,8 @@ export default function GeneralPostCard({ item, colors }: any) {
         </View>
       ) : null}
 
-      {/* MODAL: COMMENTS SECTION */}
       <Modal visible={showComments} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowComments(false)}>
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-          
           <View style={[styles.modalHeader, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
             <View style={{ width: 24 }} />
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Comments</Text>
@@ -190,7 +195,6 @@ export default function GeneralPostCard({ item, colors }: any) {
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
-          
         </SafeAreaView>
       </Modal>
     </View>
@@ -211,8 +215,6 @@ const styles = StyleSheet.create({
   descriptionContainer: { paddingHorizontal: 16 },
   descriptionText: { fontSize: 14, fontFamily: 'DMSans_400Regular', lineHeight: 20 },
   seeMoreText: { fontSize: 14, fontFamily: 'DMSans_400Regular', marginTop: 4 },
-  
-  // Modal Styles
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
   modalTitle: { fontSize: 18, fontFamily: 'DMSans_700Bold' },
   commentRow: { flexDirection: 'row', marginBottom: 16 },

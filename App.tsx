@@ -15,6 +15,9 @@ import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import OtpVerificationScreen from './src/screens/OtpVerificationScreen';
 import ChatScreen from './src/screens/ChatScreen';
 
+import AddNewUsersMessages from './src/screens/AddNewUsersMessagesScreen';
+import ChatNotifications from './src/screens/ChatNotificationsScreen';
+
 import MyPostsScreen from './src/screens/MyPostsScreen';
 import SavedPostsScreen from './src/screens/SavedPostsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -24,6 +27,12 @@ import ChangeForgotPasswordScreen from './src/screens/ChangeForgotPasswordScreen
 import MyListingsScreen from './src/screens/MyListingsScreen';
 import LikedPostsScreen from './src/screens/LikedPostsScreen';
 import MyPetsScreen from './src/screens/MyPetsScreen';
+import PetDetailsScreen from './src/screens/PetDetailsScreen';
+import LostAndFoundScreen from './src/screens/LostAndFoundScreen';
+
+import AdminHomeScreen from './src/screens/admin/AdminHomeScreen';
+import AdminPostsScreen from './src/screens/admin/AdminPostsScreen';
+import AdminLogsScreen from './src/screens/admin/AdminLogsScreen';
 
 // We import the config just to initialize it on app start
 import './src/utils/notifications'; 
@@ -63,6 +72,14 @@ export default function App() {
             <Stack.Screen name="MyListingsScreen" component={MyListingsScreen} />
             <Stack.Screen name="LikedPostsScreen" component={LikedPostsScreen} />
             <Stack.Screen name="MyPetsScreen" component={MyPetsScreen} />
+            <Stack.Screen name="LostAndFoundScreen" component={LostAndFoundScreen} />
+            <Stack.Screen name="PetDetailsScreen" component={PetDetailsScreen} />
+            <Stack.Screen name="AddNewUsersMessages" component={AddNewUsersMessages} options={{ headerShown: false, presentation: 'modal' }} />
+            <Stack.Screen name="ChatNotifications" component={ChatNotifications} options={{ headerShown: false }} />
+          
+            <Stack.Screen name="AdminHomeScreen" component={AdminHomeScreen} />
+            <Stack.Screen name="AdminPostsScreen" component={AdminPostsScreen} />
+            <Stack.Screen name="AdminLogsScreen" component={AdminLogsScreen} />
           </Stack.Navigator>
           <StatusBar style="auto" />
         </NavigationContainer>

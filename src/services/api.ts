@@ -210,9 +210,8 @@ export const api = {
   },
 
   // --- GOOGLE AUTH API ---
-  getGoogleAuthUrl: async (redirectTo: string) => {
-    // Send the dynamic return URL to the backend
-    const response = await fetch(`${BASE_URL}/auth/google?redirectTo=${encodeURIComponent(redirectTo)}`);
+  getGoogleAuthUrl: async () => {
+    const response = await fetch(`${BASE_URL}/auth/google`);
     if (!response.ok) throw new Error('Google auth failed');
     return await response.json();
   },
@@ -226,6 +225,111 @@ export const api = {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Failed to verify Google token');
     return data.userId;
+  },
+  deleteAccount: async (userId: string) => {
+    const response = await fetch(`${BASE_URL}/users/${userId}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete account');
+  },
+  deleteGeneralPost: async (postId: string) => {
+    const response = await fetch(`${BASE_URL}/posts/${postId}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete post');
+  },
+  deletePetPost: async (petId: string) => {
+    const response = await fetch(`${BASE_URL}/pets/${petId}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete pet post');
+  },
+  deleteMessage: async (messageId: string) => {
+    const response = await fetch(`${BASE_URL}/messages/message/${messageId}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete message');
+  },
+  deleteConversation: async (user1: string, user2: string) => {
+    const response = await fetch(`${BASE_URL}/messages/conversation/${user1}/${user2}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete conversation');
+  },
+  // --- LOST AND FOUND API ---
+  getLostAndFoundReports: async () => {
+    const response = await fetch(`${BASE_URL}/lost-and-found`);
+    if (!response.ok) throw new Error('Failed to fetch reports');
+    return await response.json();
+  },
+  createLostAndFoundReport: async (reportData: any) => {
+    const response = await fetch(`${BASE_URL}/lost-and-found/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reportData),
+    });
+    if (!response.ok) throw new Error('Failed to create report');
+    return await response.json();
+  },
+  uploadLostAndFoundImage: async (formData: FormData) => {
+    const response = await fetch(`${BASE_URL}/lost-and-found/image`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Image upload failed');
+    return data.image_url;
+  },
+  resolveLostAndFoundReport: async (reportId: string) => {
+    const response = await fetch(`${BASE_URL}/lost-and-found/resolve/${reportId}`, { method: 'PUT' });
+    if (!response.ok) throw new Error('Failed to resolve report');
+  },
+  getConversations: async (userId: string) => {
+    const response = await fetch(`${BASE_URL}/messages/conversations/${userId}`);
+    if (!response.ok) throw new Error('Failed to fetch conversations');
+    return await response.json();
+  },
+  editMessage: async (messageId: string, text: string) => {
+    const response = await fetch(`${BASE_URL}/messages/message/${messageId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    if (!response.ok) throw new Error('Failed to edit message');
+    return await response.json();
+  },
+  getPetDetails: async (petId: string) => {
+    const response = await fetch(`${BASE_URL}/pets/${petId}`);
+    if (!response.ok) throw new Error('Failed to fetch pet details');
+    return await response.json();
+  },
+  // --- ADMIN API ---
+  getAdminStats: async () => {
+    const response = await fetch(`${BASE_URL}/admin/stats`);
+    if (!response.ok) throw new Error('Failed to fetch stats');
+    return await response.json();
+  },
+  getAnnouncements: async () => {
+    const response = await fetch(`${BASE_URL}/admin/announcements`);
+    if (!response.ok) throw new Error('Failed to fetch announcements');
+    return await response.json();
+  },
+  createAnnouncement: async (data: { title: string, content: string, author_id: string }) => {
+    const response = await fetch(`${BASE_URL}/admin/announcements`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to create announcement');
+    return await response.json();
+  },
+  deleteAnnouncement: async (id: string) => {
+    const response = await fetch(`${BASE_URL}/admin/announcements/${id}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete announcement');
+  },
+  getAllSystemPosts: async () => {
+    const response = await fetch(`${BASE_URL}/admin/posts`);
+    if (!response.ok) throw new Error('Failed to fetch posts');
+    return await response.json();
+  },
+  deleteSystemPost: async (id: string) => {
+    const response = await fetch(`${BASE_URL}/admin/posts/${id}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete post');
+  },
+  getActivityLogs: async () => {
+    const response = await fetch(`${BASE_URL}/admin/logs`);
+    if (!response.ok) throw new Error('Failed to fetch logs');
+    return await response.json();
   },
 };
 

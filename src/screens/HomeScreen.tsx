@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, BackHandler, LayoutAnimation, UIManager, Platform, FlatList, TouchableOpacity, ActivityIndicator, Image, ScrollView, Alert, KeyboardAvoidingView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, BackHandler, LayoutAnimation, UIManager, Platform, TouchableOpacity, ActivityIndicator, Image, ScrollView, Alert, KeyboardAvoidingView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,6 +14,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import ProfileScreen from './ProfileScreen';
 import PetFeedScreen from './PetFeedScreen'; 
 import PetAdoptScreen from './PetAdoptScreen'; 
+import PetChatsScreen from './PetChatsScreen'; // <-- NEW: Clean messaging component
 
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
@@ -35,10 +36,8 @@ export default function HomeScreen({ navigation }: any) {
   const { colors, resetTheme } = useTheme();
   
   const [activeTab, setActiveTab] = useState('feed'); 
-  const [users, setUsers] = useState<any[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // --- POST CREATION STATE ---
   const [postType, setPostType] = useState<'general' | 'adoption'>('general');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,29 +52,20 @@ export default function HomeScreen({ navigation }: any) {
   const [locationResults, setLocationResults] = useState<any[]>([]);
   const [isFetchingLocations, setIsFetchingLocations] = useState(false);
   const [showLocationList, setShowLocationList] = useState(false);
-  
-  // NEW: Store a map of province codes to real province names
   const [provincesMap, setProvincesMap] = useState<Record<string, string>>({});
 
-  useFocusEffect(useCallback(() => { const sub = BackHandler.addEventListener('hardwareBackPress', () => true); return () => sub.remove(); }, []));
+  useFocusEffect(useCallback(() => { 
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => true); 
+    return () => sub.remove(); 
+  }, []));
 
   useEffect(() => {
-    // 1. Fetch Chat Users
-    if (activeTab === 'messages') {
-      setLoadingUsers(true);
-      AsyncStorage.getItem('userId').then(id => {
-        setCurrentUserId(id);
-        if (id) api.getUsers(id).then(setUsers).finally(() => setLoadingUsers(false));
-      });
-    }
-
-    // 2. Fetch Philippine Provinces ONCE in the background when app loads
+    // Fetch Philippine Provinces ONCE in the background when app loads
     const fetchProvinces = async () => {
       try {
         const res = await fetch('https://psgc.gitlab.io/api/provinces/');
         const data = await res.json();
         const map: Record<string, string> = {};
-        // Convert array to a fast dictionary: { "012800000": "Ilocos Norte" }
         data.forEach((p: any) => { map[p.code] = p.name; });
         setProvincesMap(map);
       } catch (e) {
@@ -85,7 +75,7 @@ export default function HomeScreen({ navigation }: any) {
     if (Object.keys(provincesMap).length === 0) {
       fetchProvinces();
     }
-  }, [activeTab]);
+  }, []);
 
   const handleTabChange = (tab: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -115,11 +105,8 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const selectLocation = (loc: any) => {
-    // NEW: Match the city's provinceCode to our dictionary. 
-    // If it has no province code (like cities in NCR), it defaults to 'Metro Manila'
     const provinceName = loc.provinceCode ? provincesMap[loc.provinceCode] : 'Metro Manila';
     const fullName = `${loc.name}, ${provinceName}`;
-    
     setPetForm({ ...petForm, location: fullName });
     setLocationQuery(fullName);
     setShowLocationList(false);
@@ -280,7 +267,6 @@ export default function HomeScreen({ navigation }: any) {
                           <ActivityIndicator style={{ padding: 10 }} color={colors.primary} />
                         ) : locationResults.length > 0 ? (
                           locationResults.map((loc, index) => {
-                            // NEW: Preview the exact string in the dropdown list
                             const provName = loc.provinceCode ? provincesMap[loc.provinceCode] : 'Metro Manila';
                             return (
                               <TouchableOpacity key={index} style={[styles.autocompleteItem, { borderBottomColor: colors.border }]} onPress={() => selectLocation(loc)}>
@@ -310,35 +296,14 @@ export default function HomeScreen({ navigation }: any) {
           </KeyboardAvoidingView>
         )}
 
+        {/* --- MESSAGES TAB (CLEAN 2-LINER) --- */}
         {activeTab === 'messages' && (
-          <View style={[styles.tabContent, { paddingHorizontal: 16 }]}>
-             <Text style={[styles.headerTitle, { color: colors.textPrimary, paddingHorizontal: 0 }]}>Messages</Text>
-             {loadingUsers ? (
-              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />
-            ) : (
-              <FlatList
-                data={users}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ paddingBottom: 110 }}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={<Text style={{color: colors.textSecondary, textAlign: 'center', marginTop: 20}}>No users found to message.</Text>}
-                renderItem={({ item }) => (
-                  <TouchableOpacity 
-                    style={[styles.userCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                    onPress={() => navigation.navigate('ChatScreen', { receiverId: item.id, receiverName: item.full_name || item.email, senderId: currentUserId })}
-                  >
-                    <View style={styles.avatarPlaceholder}><Ionicons name="person" size={24} color="#FFF" /></View>
-                    <View>
-                      <Text style={[styles.userName, { color: colors.textPrimary }]}>{item.full_name || 'Anonymous User'}</Text>
-                      <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{item.email}</Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
-              />
-            )}
+          <View style={[styles.tabContent, { paddingHorizontal: 0 }]}>
+            <PetChatsScreen navigation={navigation} />
           </View>
         )}
 
+        {/* --- PROFILE TAB --- */}
         {activeTab === 'profile' && <ProfileScreen navigation={navigation} handleSignOut={handleSignOut} />}
 
       </View>
@@ -360,10 +325,8 @@ const styles = StyleSheet.create({
   imagePickerContainer: { height: 250, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', marginBottom: 16, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
   previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  userCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1 },
-  avatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#F26419', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  userName: { fontSize: 16, fontFamily: 'DMSans_700Bold' },
-  userEmail: { fontSize: 13, fontFamily: 'DMSans_400Regular', marginTop: 2 },
+  
+  // Location Autocomplete Styles
   autocompleteContainer: { marginBottom: 16, position: 'relative', zIndex: 10 },
   inputLabel: { fontSize: 14, fontFamily: 'DMSans_700Bold', marginBottom: 8 },
   autocompleteInput: { height: 50, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, fontFamily: 'DMSans_400Regular' },
