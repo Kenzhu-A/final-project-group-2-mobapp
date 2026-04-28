@@ -38,6 +38,8 @@ import FilterScreen from './src/screens/FilterScreen';
 import EditPetPostScreen from './src/screens/EditPetPostScreen'; // [PET-EDIT]
 import DeletePetPostScreen from './src/screens/DeletePetPostScreen'; // [DELETE-CONFIRM]
 import LikedPetsAndPostsScreen from './src/screens/LikedPetsAndPostsScreen'; // [LIKED-POSTS]
+import AllPetsScreen from './src/screens/AllPetsScreen'; // [DASHBOARD-REDESIGN]
+import ViewUserProfileScreen from './src/screens/ViewUserProfileScreen'; // [DASHBOARD-REDESIGN]
 
 import AdminHomeScreen from './src/screens/admin/AdminHomeScreen';
 import AdminPostsScreen from './src/screens/admin/AdminPostsScreen';
@@ -123,6 +125,8 @@ export default function App() {
               <Stack.Screen name="EditPetPostScreen" component={EditPetPostScreen} />
               <Stack.Screen name="DeletePetPostScreen" component={DeletePetPostScreen} />
               <Stack.Screen name="LikedPetsAndPostsScreen" component={LikedPetsAndPostsScreen} />
+              <Stack.Screen name="AllPetsScreen" component={AllPetsScreen} />
+              <Stack.Screen name="ViewUserProfileScreen" component={ViewUserProfileScreen} />
 
               <Stack.Screen name="AdminHomeScreen" component={AdminHomeScreen} />
               <Stack.Screen name="AdminPostsScreen" component={AdminPostsScreen} />

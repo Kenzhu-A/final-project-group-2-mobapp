@@ -11,9 +11,10 @@ import { api } from '../services/api';
 interface ProfileProps {
   navigation: any;
   handleSignOut: () => void;
+  setActiveTab?: (tab: string) => void; // [DASHBOARD-REDESIGN] for cross-tab navigation
 }
 
-export default function ProfileScreen({ navigation, handleSignOut }: ProfileProps) {
+export default function ProfileScreen({ navigation, handleSignOut, setActiveTab }: ProfileProps) {
   const { colors } = useTheme(); 
 
   const [user, setUser] = useState<any>(null);
@@ -145,8 +146,8 @@ export default function ProfileScreen({ navigation, handleSignOut }: ProfileProp
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
 
-        {/* [DASHBOARD-REDESIGN] Saved Posts → new SavedPetsScreen (backend-backed adoption saves) */}
-        <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Home', { initialTab: 'saved' })}>
+        {/* [DASHBOARD-REDESIGN] Saved Posts → switch to Saved tab in HomeScreen shell */}
+        <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => setActiveTab ? setActiveTab('saved') : null}>
           <View style={styles.menuLeft}>
             <View style={[styles.iconWrapper, { backgroundColor: colors.background }]}>
               <Ionicons name="bookmark-outline" size={20} color={colors.textPrimary} />

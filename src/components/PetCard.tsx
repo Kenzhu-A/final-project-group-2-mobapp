@@ -41,18 +41,15 @@ export default function PetCard({ pet, onPress }: Props) {
     const uid = await AsyncStorage.getItem('userId');
     if (!uid) return;
     const next = !isLiked;
+    // [DASHBOARD-REDESIGN] update local state + AsyncStorage immediately (optimistic)
     setIsLiked(next);
     setLikesCount((p) => next ? p + 1 : Math.max(0, p - 1));
-    try {
-      await api.likePet(pet.id, next);
-      const stored = await AsyncStorage.getItem(`${uid}_likedPets`);
-      let arr = stored ? JSON.parse(stored) : [];
-      arr = next ? [...arr, pet.id] : arr.filter((id: string) => id !== pet.id);
-      await AsyncStorage.setItem(`${uid}_likedPets`, JSON.stringify(arr));
-    } catch {
-      setIsLiked(!next);
-      setLikesCount((p) => !next ? p + 1 : Math.max(0, p - 1));
-    }
+    const stored = await AsyncStorage.getItem(`${uid}_likedPets`);
+    let arr = stored ? JSON.parse(stored) : [];
+    arr = next ? [...arr, pet.id] : arr.filter((id: string) => id !== pet.id);
+    await AsyncStorage.setItem(`${uid}_likedPets`, JSON.stringify(arr));
+    // Fire-and-forget backend update; UI stays consistent even if backend fails
+    api.likePet(pet.id, next).catch((err) => console.warn('[LIKED-POSTS] likePet failed:', err.message));
   };
 
   const cityOnly = (pet.location || '').split(',')[0] || 'Unknown';

@@ -230,7 +230,7 @@ export default function HomeScreen({ navigation }: any) {
       <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
         
         {/* [DASHBOARD-REDESIGN] */}
-        {activeTab === 'home' && <View style={styles.tabContent}><DashboardScreen navigation={navigation} /></View>}
+        {activeTab === 'home' && <View style={styles.tabContent}><DashboardScreen navigation={navigation} onProfilePress={() => handleTabChange('profile')} /></View>}
         {activeTab === 'saved' && <View style={styles.tabContent}><SavedPetsScreen navigation={navigation} /></View>}
 
         {activeTab === 'add' && (
@@ -372,7 +372,7 @@ export default function HomeScreen({ navigation }: any) {
         )}
 
         {/* --- PROFILE TAB --- */}
-        {activeTab === 'profile' && <ProfileScreen navigation={navigation} handleSignOut={handleSignOut} />}
+        {activeTab === 'profile' && <ProfileScreen navigation={navigation} handleSignOut={handleSignOut} setActiveTab={handleTabChange} />}
 
       </View>
       <BottomNavBar activeTab={activeTab} setActiveTab={handleTabChange} />

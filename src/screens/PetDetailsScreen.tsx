@@ -81,18 +81,14 @@ export default function PetDetailsScreen({ route, navigation }: any) {
   const onToggleLike = async () => {
     if (!currentUserId) return;
     const next = !isLiked;
+    // [DASHBOARD-REDESIGN] optimistic update — AsyncStorage first, backend fire-and-forget
     setIsLiked(next);
     setLikesCount((p) => next ? p + 1 : Math.max(0, p - 1));
-    try {
-      await api.likePet(pet.id, next);
-      const stored = await AsyncStorage.getItem(`${currentUserId}_likedPets`);
-      let arr = stored ? JSON.parse(stored) : [];
-      arr = next ? [...arr, pet.id] : arr.filter((id: string) => id !== pet.id);
-      await AsyncStorage.setItem(`${currentUserId}_likedPets`, JSON.stringify(arr));
-    } catch {
-      setIsLiked(!next);
-      setLikesCount((p) => !next ? p + 1 : Math.max(0, p - 1));
-    }
+    const stored = await AsyncStorage.getItem(`${currentUserId}_likedPets`);
+    let arr = stored ? JSON.parse(stored) : [];
+    arr = next ? [...arr, pet.id] : arr.filter((id: string) => id !== pet.id);
+    await AsyncStorage.setItem(`${currentUserId}_likedPets`, JSON.stringify(arr));
+    api.likePet(pet.id, next).catch((err) => console.warn('[LIKED-POSTS] likePet failed:', err.message));
   };
 
   const statusColor =
@@ -245,18 +241,23 @@ export default function PetDetailsScreen({ route, navigation }: any) {
             </>
           )}
 
-          {/* owner info */}
+          {/* owner info — tappable → ViewUserProfileScreen [DASHBOARD-REDESIGN] */}
           <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 20 }]}>Listed By</Text>
-          <View style={[styles.ownerCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+          <TouchableOpacity
+            style={[styles.ownerCard, { backgroundColor: colors.background, borderColor: colors.border }]}
+            onPress={() => pet.owner_id && navigation.navigate('ViewUserProfileScreen', { userId: pet.owner_id })}
+            activeOpacity={0.8}
+          >
             <Image
               source={pet.owner?.avatar_url ? { uri: pet.owner.avatar_url } : require('../../assets/adaptive-icon.png')}
               style={styles.ownerAvatar}
             />
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={[styles.ownerName, { color: colors.textPrimary }]}>{pet.owner?.full_name || 'Anonymous'}</Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'DMSans_400Regular' }}>Pet Owner</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'DMSans_400Regular' }}>Pet Owner · Tap to view profile</Text>
             </View>
-          </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
 
           {/* fee + apply/manage */}
           <View style={styles.feeRow}>

@@ -7,14 +7,19 @@ interface Props {
   pet: any;
   onPress: () => void;
   onSayHi: () => void;
+  fixedHeight?: number; // [HERO-CAROUSEL] equal height across slides
 }
 
-export default function FeaturedPetCard({ pet, onPress, onSayHi }: Props) {
+export default function FeaturedPetCard({ pet, onPress, onSayHi, fixedHeight }: Props) {
   const { colors } = useTheme();
   if (!pet) return null;
 
   return (
-    <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={[styles.card, { backgroundColor: colors.surface }]}>
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={onPress}
+      style={[styles.card, { backgroundColor: colors.surface }, fixedHeight ? { height: fixedHeight } : {}]}
+    >
       <View style={styles.left}>
         <Text style={[styles.eyebrow, { color: colors.accent }]}>FEATURED TODAY</Text>
         <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>Meet {pet.pet_name}!</Text>

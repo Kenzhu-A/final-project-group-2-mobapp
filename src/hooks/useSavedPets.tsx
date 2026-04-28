@@ -43,14 +43,16 @@ export function SavedPetsProvider({ children }: { children: ReactNode }) {
   useEffect(() => { refresh(); }, [refresh]);
 
   const save = useCallback(async (petId: string) => {
-    if (!userId) return;
+    // [DASHBOARD-REDESIGN] read userId directly from storage to avoid stale closure
+    const uid = userId || (await AsyncStorage.getItem('userId'));
+    if (!uid) return;
     if (savedIds.has(petId)) return;
     Haptics.selectionAsync().catch(() => {});
     try {
-      await api.savePet(userId, petId);
+      await api.savePet(uid, petId);
       await refresh();
     } catch (e: any) {
-      Alert.alert('Save failed', e.message || 'Could not save this pet.');
+      Alert.alert('Save failed', e.message || 'Could not save this pet. Make sure the backend is running.');
     }
   }, [userId, savedIds, refresh]);
 
