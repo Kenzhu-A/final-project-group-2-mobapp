@@ -44,6 +44,10 @@ import ViewUserProfileScreen from './src/screens/ViewUserProfileScreen'; // [DAS
 import AdminHomeScreen from './src/screens/admin/AdminHomeScreen';
 import AdminPostsScreen from './src/screens/admin/AdminPostsScreen';
 import AdminLogsScreen from './src/screens/admin/AdminLogsScreen';
+import AdminUserConversationsScreen from './src/screens/admin/AdminUserConversationsScreen'; // [ADMIN-MESSAGES]
+import AdminMessageThreadScreen from './src/screens/admin/AdminMessageThreadScreen'; // [ADMIN-MESSAGES]
+import AdminUsersScreen from './src/screens/admin/AdminUsersScreen'; // [ADMIN]
+import AdminLostFoundModerationScreen from './src/screens/admin/AdminLostFoundModerationScreen'; // [ADMIN]
 
 // Initializes Notifications.setNotificationHandler on import
 import './src/utils/notifications';
@@ -131,6 +135,10 @@ export default function App() {
               <Stack.Screen name="AdminHomeScreen" component={AdminHomeScreen} />
               <Stack.Screen name="AdminPostsScreen" component={AdminPostsScreen} />
               <Stack.Screen name="AdminLogsScreen" component={AdminLogsScreen} />
+              <Stack.Screen name="AdminUserConversationsScreen" component={AdminUserConversationsScreen} />
+              <Stack.Screen name="AdminMessageThreadScreen" component={AdminMessageThreadScreen} />
+              <Stack.Screen name="AdminUsersScreen" component={AdminUsersScreen} />
+              <Stack.Screen name="AdminLostFoundModerationScreen" component={AdminLostFoundModerationScreen} />
             </Stack.Navigator>
             <StatusBar style="auto" />
           </NavigationContainer>

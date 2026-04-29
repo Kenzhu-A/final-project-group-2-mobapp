@@ -3,23 +3,23 @@ import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const lightTheme = {
-  background: '#F8F9FA',
-  surface: '#FFFFFF',
-  textPrimary: '#212529',
+  background: '#F1EFE8', // Parchment — page background
+  surface:     '#FFFFFF',
+  textPrimary: '#444441', // Charcoal — body text
   textSecondary: '#6C757D',
-  primary: '#F26419',
-  border: '#E9ECEF',
-  accent: '#0E9F6E', // [DASHBOARD-REDESIGN] green for filter button + Say Hi/Apply-to-Adopt
+  primary: '#1D9E75',    // Rescue green — primary CTA
+  accent:  '#D85A30',    // Warm coral — highlights & accent
+  border:  '#dddddd',
 };
 
 export const darkTheme = {
   background: '#121212',
-  surface: '#1E1E1E',
-  textPrimary: '#F8F9FA',
+  surface:    '#1E1E1E',
+  textPrimary: '#F1EFE8',
   textSecondary: '#ADB5BD',
-  primary: '#F26419',
-  border: '#343A40',
-  accent: '#0E9F6E', // [DASHBOARD-REDESIGN]
+  primary: '#1D9E75',  // Rescue green
+  accent:  '#D85A30',  // Warm coral
+  border:  '#343A40',
 };
 
 type ThemeType = typeof lightTheme;

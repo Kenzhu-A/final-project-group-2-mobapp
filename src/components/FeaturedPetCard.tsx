@@ -1,6 +1,6 @@
 // [DASHBOARD-REDESIGN] featured-today hero card — used inside HeroCarousel
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
 interface Props {
@@ -16,8 +16,7 @@ export default function FeaturedPetCard({ pet, onPress, onSayHi, fixedHeight, is
   if (!pet) return null;
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
+    <Pressable
       onPress={onPress}
       style={[styles.card, { backgroundColor: colors.surface }, fixedHeight ? { height: fixedHeight } : {}]}
     >
@@ -29,17 +28,17 @@ export default function FeaturedPetCard({ pet, onPress, onSayHi, fixedHeight, is
         </Text>
         {/* [HERO-CAROUSEL] owner sees "View Details", others see "Say Hi" */}
         {isOwner ? (
-          <TouchableOpacity style={[styles.sayHi, { backgroundColor: colors.primary }]} onPress={onPress}>
+          <Pressable style={[styles.sayHi, { backgroundColor: colors.primary }]} onPress={onPress}>
             <Text style={styles.sayHiText}>View Details</Text>
-          </TouchableOpacity>
+          </Pressable>
         ) : (
-          <TouchableOpacity style={[styles.sayHi, { backgroundColor: colors.accent }]} onPress={onSayHi}>
+          <Pressable style={[styles.sayHi, { backgroundColor: colors.accent }]} onPress={onSayHi}>
             <Text style={styles.sayHiText}>Say Hi 👋</Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
       <Image source={{ uri: pet.image_url }} style={styles.image} />
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

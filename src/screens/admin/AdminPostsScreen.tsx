@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+﻿import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api';
@@ -34,9 +34,9 @@ export default function AdminPostsScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
+        <Pressable onPress={() => navigation.goBack()} style={{ padding: 4 }}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Manage Posts</Text>
         <View style={{ width: 32 }} />
       </View>
@@ -56,9 +56,9 @@ export default function AdminPostsScreen({ navigation }: any) {
                   <Text style={[styles.userName, { color: colors.textPrimary }]}>{item.owner?.full_name || 'User'}</Text>
                   <Text style={{ fontSize: 12, color: colors.textSecondary }}>{new Date(item.created_at).toLocaleString()}</Text>
                 </View>
-                <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteBtn}>
+                <Pressable onPress={() => handleDelete(item.id)} style={styles.deleteBtn}>
                   <Ionicons name="trash" size={18} color="#D32F2F" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
               {item.description ? <Text style={[styles.postText, { color: colors.textPrimary }]}>{item.description}</Text> : null}
               {item.image_url ? <Image source={{ uri: item.image_url }} style={styles.postImage} /> : null}

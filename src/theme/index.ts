@@ -4,7 +4,6 @@ export const theme = {
     primary: '#2D9C6C',
     textDark: '#333333',
     textLight: '#777777',
-    label: '#A0A0A0',
     border: '#CCCCCC',
     surface: '#FFFFFF',
     error: '#E74C3C',

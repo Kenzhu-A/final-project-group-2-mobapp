@@ -1,7 +1,7 @@
-// [DASHBOARD-REDESIGN] public profile of another user — accessed from PetDetailsScreen owner card
+﻿// [DASHBOARD-REDESIGN] public profile of another user — accessed from PetDetailsScreen owner card
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Image,
+  View, Text, StyleSheet, FlatList, Pressable, Image,
   ScrollView, ActivityIndicator, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -65,9 +65,9 @@ export default function ViewUserProfileScreen({ route, navigation }: any) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
       {/* back button overlaid on banner */}
-      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+      <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
         <Ionicons name="chevron-back" size={24} color="#FFF" />
-      </TouchableOpacity>
+      </Pressable>
       <Text style={styles.screenLabel}>View User Profile</Text>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -113,7 +113,7 @@ export default function ViewUserProfileScreen({ route, navigation }: any) {
                 ).map((opt) => {
                   const active = selectedCategory === opt.key;
                   return (
-                    <TouchableOpacity
+                    <Pressable
                       key={opt.key}
                       onPress={() => setSelectedCategory(opt.key)}
                       style={[
@@ -123,7 +123,7 @@ export default function ViewUserProfileScreen({ route, navigation }: any) {
                       ]}
                     >
                       <Text style={[styles.chipText, { color: active ? '#FFF' : colors.textPrimary }]}>{opt.key}</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   );
                 })}
               </ScrollView>

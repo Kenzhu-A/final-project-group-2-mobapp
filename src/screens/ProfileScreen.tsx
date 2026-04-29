@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
+﻿import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -103,9 +103,9 @@ export default function ProfileScreen({ navigation, handleSignOut, setActiveTab 
             style={[styles.avatarImage, { borderColor: colors.primary }]} 
           />
         )}
-        <TouchableOpacity style={[styles.editBadge, { backgroundColor: colors.primary, borderColor: colors.background }]} onPress={handleEditAvatar}>
+        <Pressable style={[styles.editBadge, { backgroundColor: colors.primary, borderColor: colors.background }]} onPress={handleEditAvatar}>
           <Ionicons name="pencil" size={16} color="#FFF" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <View style={styles.userInfo}>
@@ -115,7 +115,7 @@ export default function ProfileScreen({ navigation, handleSignOut, setActiveTab 
 
       <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         
-        <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('MyPetsScreen')}>
+        <Pressable style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('MyPetsScreen')}>
           <View style={styles.menuLeft}>
             <View style={[styles.iconWrapper, { backgroundColor: colors.background }]}>
               <Ionicons name="paw-outline" size={20} color={colors.textPrimary} />
@@ -123,9 +123,9 @@ export default function ProfileScreen({ navigation, handleSignOut, setActiveTab 
             <Text style={[styles.menuText, { color: colors.textPrimary }]}>My Pets</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </Pressable>
         {/* My Listings */}
-        <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('MyListingsScreen')}>
+        <Pressable style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('MyListingsScreen')}>
           <View style={styles.menuLeft}>
             <View style={[styles.iconWrapper, { backgroundColor: colors.background }]}>
               <Ionicons name="list-outline" size={20} color={colors.textPrimary} />
@@ -133,10 +133,10 @@ export default function ProfileScreen({ navigation, handleSignOut, setActiveTab 
             <Text style={[styles.menuText, { color: colors.textPrimary }]}>My Listings</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </Pressable>
 
         {/* My Posts */}
-        <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('MyPostsScreen')}>
+        <Pressable style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('MyPostsScreen')}>
           <View style={styles.menuLeft}>
             <View style={[styles.iconWrapper, { backgroundColor: colors.background }]}>
               <Ionicons name="document-text-outline" size={20} color={colors.textPrimary} />
@@ -144,10 +144,10 @@ export default function ProfileScreen({ navigation, handleSignOut, setActiveTab 
             <Text style={[styles.menuText, { color: colors.textPrimary }]}>My Posts</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </Pressable>
 
         {/* [LIKED-POSTS] Liked Posts → new unified LikedPetsAndPostsScreen */}
-        <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('LikedPetsAndPostsScreen')}>
+        <Pressable style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('LikedPetsAndPostsScreen')}>
           <View style={styles.menuLeft}>
             <View style={[styles.iconWrapper, { backgroundColor: colors.background }]}>
               <Ionicons name="heart-outline" size={20} color={colors.textPrimary} />
@@ -155,10 +155,10 @@ export default function ProfileScreen({ navigation, handleSignOut, setActiveTab 
             <Text style={[styles.menuText, { color: colors.textPrimary }]}>Liked Posts</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </Pressable>
 
         {/* Settings */}
-        <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SettingsScreen')}>
+        <Pressable style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SettingsScreen')}>
           <View style={styles.menuLeft}>
             <View style={[styles.iconWrapper, { backgroundColor: colors.background }]}>
               <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
@@ -166,13 +166,13 @@ export default function ProfileScreen({ navigation, handleSignOut, setActiveTab 
             <Text style={[styles.menuText, { color: colors.textPrimary }]}>Settings</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
+      <Pressable style={styles.logoutButton} onPress={handleSignOut}>
         <Ionicons name="log-out-outline" size={22} color="#D32F2F" style={styles.logoutIcon} />
         <Text style={styles.logoutText}>Log Out</Text>
-      </TouchableOpacity>
+      </Pressable>
 
     </ScrollView>
   );

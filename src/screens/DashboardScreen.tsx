@@ -1,7 +1,7 @@
-// [DASHBOARD-REDESIGN] main dashboard — rendered by HomeScreen for activeTab === 'home'
+﻿// [DASHBOARD-REDESIGN] main dashboard — rendered by HomeScreen for activeTab === 'home'
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, TextInput, Pressable,
   FlatList, Image, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -202,16 +202,16 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
         </View>
         <View style={styles.headerActions}>
           {/* [DASHBOARD-REDESIGN] notification badge */}
-          <TouchableOpacity onPress={() => navigation.navigate('ChatNotifications')} style={[styles.iconBtn, { backgroundColor: colors.surface }]}>
+          <Pressable onPress={() => navigation.navigate('ChatNotifications')} style={styles.iconBtn}>
             <Ionicons name="notifications-outline" size={20} color={colors.textPrimary} />
             {notifCount > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{notifCount > 9 ? '9+' : notifCount}</Text>
               </View>
             )}
-          </TouchableOpacity>
+          </Pressable>
           {/* [DASHBOARD-REDESIGN] avatar → profile tab via onProfilePress */}
-          <TouchableOpacity onPress={onProfilePress} hitSlop={8}>
+          <Pressable onPress={onProfilePress} hitSlop={8}>
             {profile?.avatar_url ? (
               <Image source={{ uri: profile.avatar_url }} style={[styles.avatar, { borderColor: colors.primary }]} />
             ) : (
@@ -219,7 +219,7 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
                 <Text style={styles.avatarLetter}>{firstName(profile?.full_name).charAt(0).toUpperCase()}</Text>
               </View>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
@@ -236,14 +236,14 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
             returnKeyType="search"
           />
           {!!search && (
-            <TouchableOpacity onPress={() => setSearch('')}>
+            <Pressable onPress={() => setSearch('')}>
               <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
-        <TouchableOpacity style={[styles.filterBtn, { backgroundColor: colors.accent }]} onPress={openFilter}>
+        <Pressable style={[styles.filterBtn, { backgroundColor: colors.accent }]} onPress={openFilter}>
           <Ionicons name="options" size={20} color="#FFF" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* [HERO-CAROUSEL] swipeable hero */}
@@ -263,7 +263,7 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
           const active = selectedCategory === opt.key;
           const count = counts[opt.key] ?? 0;
           return (
-            <TouchableOpacity
+            <Pressable
               key={opt.key}
               onPress={() => onSelectCategory(opt.key)}
               style={[
@@ -273,7 +273,7 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
             >
               <Text style={[styles.chipText, { color: active ? '#FFF' : colors.textPrimary }]}>{opt.key}</Text>
               <Text style={[styles.chipCount, { color: active ? '#FFF' : colors.textSecondary }]}> {count}</Text>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
         <View style={{ width: 20 }} />
@@ -282,9 +282,9 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
       {/* Near you — horizontal strip with "See all" */}
       <View style={[styles.nearYouRow, { paddingHorizontal: 20, marginTop: 20 }]}>
         <Text style={[styles.nearYou, { color: colors.textPrimary }]}>Near you</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('AllPetsScreen')}>
+        <Pressable onPress={() => navigation.navigate('AllPetsScreen')}>
           <Text style={[styles.seeAll, { color: colors.accent }]}>See all</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {nearYouPets.length === 0 ? (
@@ -294,9 +294,9 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
             {pets.length === 0 ? 'No pets available yet.' : 'No pets match your filters.'}
           </Text>
           {pets.length > 0 && (
-            <TouchableOpacity onPress={() => { setSearch(''); setSelectedCategory('All'); setFilters({}); AsyncStorage.removeItem(FILTERS_KEY); }} style={{ marginTop: 8 }}>
+            <Pressable onPress={() => { setSearch(''); setSelectedCategory('All'); setFilters({}); AsyncStorage.removeItem(FILTERS_KEY); }} style={{ marginTop: 8 }}>
               <Text style={{ color: colors.primary, fontFamily: 'DMSans_700Bold' }}>Clear filters</Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
       ) : (

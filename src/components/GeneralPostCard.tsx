@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, Modal, FlatList, TextInput, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image, Alert, Modal, FlatList, TextInput, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../services/api';
@@ -121,9 +121,9 @@ export default function GeneralPostCard({ item, colors, onUnsave }: any) {
           <Image source={item.owner?.avatar_url ? { uri: item.owner.avatar_url } : require('../../assets/adaptive-icon.png')} style={styles.avatar} />
           <Text style={[styles.userName, { color: colors.textPrimary }]}>{item.owner?.full_name || 'Anonymous User'}</Text>
         </View>
-        <TouchableOpacity onPress={handleOptions}>
+        <Pressable onPress={handleOptions}>
           <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {item.image_url ? (
@@ -132,16 +132,16 @@ export default function GeneralPostCard({ item, colors, onUnsave }: any) {
 
       <View style={styles.actionBar}>
         <View style={styles.actionLeft}>
-          <TouchableOpacity style={styles.actionIcon} onPress={toggleLike}>
+          <Pressable style={styles.actionIcon} onPress={toggleLike}>
             <Ionicons name={isLiked ? "heart" : "heart-outline"} size={28} color={isLiked ? "#E0245E" : colors.textPrimary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionIcon} onPress={handleOpenComments}>
+          </Pressable>
+          <Pressable style={styles.actionIcon} onPress={handleOpenComments}>
             <Ionicons name="chatbubble-outline" size={26} color={colors.textPrimary} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
-        <TouchableOpacity onPress={toggleSave}>
+        <Pressable onPress={toggleSave}>
           <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} size={26} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <Text style={[styles.likesText, { color: colors.textPrimary }]}>{likesCount} liked this post</Text>
@@ -153,9 +153,9 @@ export default function GeneralPostCard({ item, colors, onUnsave }: any) {
             {item.description}
           </Text>
           {item.description.length > 80 && !expanded && (
-            <TouchableOpacity onPress={() => setExpanded(true)}>
+            <Pressable onPress={() => setExpanded(true)}>
               <Text style={[styles.seeMoreText, { color: colors.textSecondary }]}>see more...</Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
       ) : null}
@@ -165,9 +165,9 @@ export default function GeneralPostCard({ item, colors, onUnsave }: any) {
           <View style={[styles.modalHeader, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
             <View style={{ width: 24 }} />
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Comments</Text>
-            <TouchableOpacity onPress={() => setShowComments(false)}>
+            <Pressable onPress={() => setShowComments(false)}>
               <Ionicons name="close" size={28} color={colors.textPrimary} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           <FlatList
@@ -196,9 +196,9 @@ export default function GeneralPostCard({ item, colors, onUnsave }: any) {
                 onChangeText={setNewComment}
                 multiline
               />
-              <TouchableOpacity onPress={handlePostComment} disabled={postingComment} style={styles.sendButton}>
+              <Pressable onPress={handlePostComment} disabled={postingComment} style={styles.sendButton}>
                 <Ionicons name="send" size={24} color={newComment.trim() ? colors.primary : colors.textSecondary} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>

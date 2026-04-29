@@ -1,6 +1,6 @@
-// [PET-EDIT] populated listings with Edit + Delete actions
+﻿// [PET-EDIT] populated listings with Edit + Delete actions
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -33,10 +33,10 @@ export default function MyListingsScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <Pressable onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>My Listings</Text>
       </View>
 
@@ -74,12 +74,12 @@ export default function MyListingsScreen({ navigation }: any) {
                   </Text>
                 </View>
               </View>
-              <TouchableOpacity onPress={() => navigation.navigate('EditPetPostScreen', { pet: item })} style={styles.actionBtn}>
+              <Pressable onPress={() => navigation.navigate('EditPetPostScreen', { pet: item })} style={styles.actionBtn}>
                 <Ionicons name="pencil" size={20} color={colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate('DeletePetPostScreen', { pet: item })} style={styles.actionBtn}>
+              </Pressable>
+              <Pressable onPress={() => navigation.navigate('DeletePetPostScreen', { pet: item })} style={styles.actionBtn}>
                 <Ionicons name="trash" size={20} color="#B23A3A" />
-              </TouchableOpacity>
+              </Pressable>
             </View>
           )}
         />

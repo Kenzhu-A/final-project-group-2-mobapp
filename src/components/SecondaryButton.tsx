@@ -1,6 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { theme } from '../theme';
+import { Pressable, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   title: string;
@@ -9,35 +9,32 @@ interface Props {
 }
 
 export default function SecondaryButton({ title, onPress, disabled }: Props) {
+  const { colors } = useTheme();
   return (
-    <TouchableOpacity
-      style={[styles.button, disabled && styles.disabled]}
+    <Pressable
+      style={({ pressed }) => [
+        styles.button,
+        { borderColor: colors.primary },
+        disabled && styles.disabled,
+        pressed && { opacity: 0.8 },
+      ]}
       onPress={onPress}
       disabled={disabled}
-      activeOpacity={0.7}
     >
-      <Text style={styles.text}>{title}</Text>
-    </TouchableOpacity>
+      <Text style={[styles.text, { color: colors.primary }]}>{title}</Text>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    height: 52, // STRICT: 48-52dp
-    backgroundColor: theme.colors.transparent,
+    height: 52,
     borderWidth: 1.5,
-    borderColor: theme.colors.primary,
-    borderRadius: theme.radius.button,
+    borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: theme.spacing.m,
+    marginBottom: 16,
   },
-  disabled: {
-    opacity: 0.5,
-  },
-  text: {
-    color: theme.colors.primary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  disabled: { opacity: 0.5 },
+  text: { fontSize: 16, fontFamily: 'DMSans_700Bold' },
 });

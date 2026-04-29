@@ -1,6 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { theme } from '../theme';
+import { Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   title: string;
@@ -11,42 +11,40 @@ interface Props {
 }
 
 export default function PrimaryButton({ title, onPress, disabled, loading, type = 'primary' }: Props) {
+  const { colors } = useTheme();
   const isPrimary = type === 'primary';
   return (
-    <TouchableOpacity
-      style={[
+    <Pressable
+      style={({ pressed }) => [
         styles.button,
+        { backgroundColor: isPrimary ? colors.primary : 'transparent', borderColor: colors.primary },
         !isPrimary && styles.secondaryButton,
-        disabled && styles.disabled
+        disabled && styles.disabled,
+        pressed && { opacity: 0.85 },
       ]}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? '#FFF' : theme.colors.primary} />
+        <ActivityIndicator color={isPrimary ? '#FFF' : colors.primary} />
       ) : (
-        <Text style={[styles.text, !isPrimary && styles.secondaryText]}>{title}</Text>
+        <Text style={[styles.text, !isPrimary && { color: colors.primary }]}>{title}</Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    height: 52, // STRICT: 48-52dp requirement
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.button,
+    height: 52,
+    borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: theme.spacing.m,
+    marginBottom: 16,
   },
   secondaryButton: {
-    backgroundColor: theme.colors.transparent,
     borderWidth: 1.5,
-    borderColor: theme.colors.primary,
   },
   disabled: { opacity: 0.5 },
-  text: { color: theme.colors.surface, fontSize: 16, fontFamily: theme.typography.bodyFontBold },
-  secondaryText: { color: theme.colors.primary },
+  text: { color: '#FFF', fontSize: 16, fontFamily: 'DMSans_700Bold' },
 });

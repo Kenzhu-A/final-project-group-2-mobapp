@@ -1,6 +1,6 @@
-// [LOST-FOUND] Lost & Found report feed + create modal
+﻿// [LOST-FOUND] Lost & Found report feed + create modal
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, Linking, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, Image, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, Linking, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -28,7 +28,9 @@ export default function LostAndFoundScreen({ navigation }: any) {
   // Modal State
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  // [LOST-FOUND] editTarget: null = create mode, object = edit mode
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+
   const [form, setForm] = useState({
     reportType: 'Lost',
     petCategory: 'Dog',
@@ -59,6 +61,28 @@ export default function LostAndFoundScreen({ navigation }: any) {
 
   const filteredReports = reports.filter(r => filterType === 'All' || r.report_type === filterType);
 
+  // [LOST-FOUND] open modal pre-filled for editing
+  const openEdit = (item: any) => {
+    setEditTarget(item);
+    setForm({
+      reportType: item.report_type,
+      petCategory: item.pet_category,
+      petName: item.pet_name || '',
+      description: item.description || '',
+      location: item.location || '',
+      contact: item.contact_info || '',
+    });
+    setSelectedImage(item.image_url || null);
+    setIsModalVisible(true);
+  };
+
+  const openCreate = () => {
+    setEditTarget(null);
+    setForm({ reportType: 'Lost', petCategory: 'Dog', petName: '', description: '', location: '', contact: '' });
+    setSelectedImage(null);
+    setIsModalVisible(true);
+  };
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'], allowsEditing: true, aspect: [4, 5], quality: 0.8,
@@ -74,34 +98,47 @@ export default function LostAndFoundScreen({ navigation }: any) {
     setIsSubmitting(true);
     try {
       const userId = await AsyncStorage.getItem('userId');
-      let uploadedImageUrl = null;
-      
-      if (selectedImage) {
+
+      // upload new image only if it's a local URI (not an existing remote URL)
+      let imageUrl = typeof selectedImage === 'string' && selectedImage.startsWith('http')
+        ? selectedImage
+        : null;
+      if (selectedImage && !selectedImage.startsWith('http')) {
         const filename = selectedImage.split('/').pop();
         const match = /\.(\w+)$/.exec(filename || '');
         const type = match ? `image/${match[1]}` : `image`;
         const formData = new FormData();
         formData.append('report_image', { uri: selectedImage, name: filename, type } as any);
-        uploadedImageUrl = await api.uploadLostAndFoundImage(formData);
+        imageUrl = await api.uploadLostAndFoundImage(formData);
       }
 
-      await api.createLostAndFoundReport({
-        owner_id: userId,
+      const payload = {
         report_type: form.reportType,
         pet_category: form.petCategory,
         pet_name: form.petName,
         description: form.description,
         location: form.location,
         contact_info: form.contact,
-        image_url: uploadedImageUrl
-      });
-      
-      Alert.alert('Success', 'Report posted to the board!');
+        image_url: imageUrl,
+      };
+
+      if (editTarget) {
+        // [LOST-FOUND] edit mode — update existing report
+        const updated = await api.updateLostAndFoundReport(editTarget.id, payload);
+        setReports((prev) => prev.map((r) => r.id === editTarget.id ? { ...r, ...updated } : r));
+        Alert.alert('Updated', 'Your report has been updated.');
+      } else {
+        // create mode
+        await api.createLostAndFoundReport({ owner_id: userId, ...payload });
+        Alert.alert('Success', 'Report posted to the board!');
+        fetchReports();
+      }
+
       setIsModalVisible(false);
+      setEditTarget(null);
       setForm({ reportType: 'Lost', petCategory: 'Dog', petName: '', description: '', location: '', contact: '' });
       setSelectedImage(null);
-      fetchReports();
-    } catch (e: any) { Alert.alert('Error', e.message); } 
+    } catch (e: any) { Alert.alert('Error', e.message); }
     finally { setIsSubmitting(false); }
   };
 
@@ -121,10 +158,10 @@ export default function LostAndFoundScreen({ navigation }: any) {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Lost & Found</Text>
         <View style={{ width: 24 }} />
       </View>
@@ -136,12 +173,12 @@ export default function LostAndFoundScreen({ navigation }: any) {
           const activeColor = type === 'Lost' ? '#D32F2F' : type === 'Found' ? '#4CAF50' : colors.primary;
           const count = type === 'All' ? reports.length : reports.filter(r => r.report_type === type).length;
           return (
-            <TouchableOpacity key={type} style={styles.tab} onPress={() => setFilterType(type)}>
+            <Pressable key={type} style={styles.tab} onPress={() => setFilterType(type)}>
               <Text style={[styles.tabText, { color: active ? activeColor : colors.textSecondary }]}>
                 {type} ({count})
               </Text>
               {active && <View style={[styles.tabUnderline, { backgroundColor: activeColor }]} />}
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>
@@ -185,12 +222,18 @@ export default function LostAndFoundScreen({ navigation }: any) {
                       <Text style={[styles.dateText, { color: colors.textSecondary }]}>{new Date(item.created_at).toLocaleDateString()}</Text>
                     </View>
                   </View>
-                  {/* [LOST-FOUND] resolve — icon + text forced inline */}
+                  {/* [LOST-FOUND] owner controls — edit + resolve */}
                   {isOwner && (
-                    <TouchableOpacity onPress={() => handleResolve(item.id)} style={[styles.resolveBtn, { borderColor: '#4CAF50' }]}>
-                      <Ionicons name="checkmark-circle-outline" size={14} color="#4CAF50" />
-                      <Text style={[styles.resolveBtnText, { color: '#4CAF50' }]}>Resolved</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <Pressable onPress={() => openEdit(item)} style={[styles.resolveBtn, { borderColor: colors.primary }]}>
+                        <Ionicons name="pencil-outline" size={14} color={colors.primary} />
+                        <Text style={[styles.resolveBtnText, { color: colors.primary }]}>Edit</Text>
+                      </Pressable>
+                      <Pressable onPress={() => handleResolve(item.id)} style={[styles.resolveBtn, { borderColor: '#4CAF50' }]}>
+                        <Ionicons name="checkmark-circle-outline" size={14} color="#4CAF50" />
+                        <Text style={[styles.resolveBtnText, { color: '#4CAF50' }]}>Resolved</Text>
+                      </Pressable>
+                    </View>
                   )}
                 </View>
 
@@ -221,16 +264,16 @@ export default function LostAndFoundScreen({ navigation }: any) {
 
                   {/* action buttons */}
                   <View style={styles.actionRow}>
-                    <TouchableOpacity
+                    <Pressable
                       style={[styles.actionBtn, { borderColor: colors.border, flex: 1 }]}
                       onPress={() => Linking.openURL(`tel:${item.contact_info}`)}
                     >
                       <Ionicons name="call-outline" size={15} color={colors.primary} />
                       <Text style={[styles.actionBtnText, { color: colors.primary }]}>Call</Text>
-                    </TouchableOpacity>
+                    </Pressable>
 
                     {!isOwner && (
-                      <TouchableOpacity
+                      <Pressable
                         style={[styles.actionBtn, { backgroundColor: colors.primary, borderColor: colors.primary, flex: 1 }]}
                         onPress={() => navigation.navigate('ChatScreen', {
                           receiverId: item.owner_id,
@@ -241,7 +284,7 @@ export default function LostAndFoundScreen({ navigation }: any) {
                       >
                         <Ionicons name="chatbubble-outline" size={15} color="#FFF" />
                         <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Message</Text>
-                      </TouchableOpacity>
+                      </Pressable>
                     )}
                   </View>
                 </View>
@@ -252,16 +295,16 @@ export default function LostAndFoundScreen({ navigation }: any) {
       )}
 
       {/* Floating Action Button */}
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setIsModalVisible(true)}>
+      <Pressable style={[styles.fab, { backgroundColor: colors.primary }]} onPress={openCreate}>
         <Ionicons name="add" size={32} color="#FFF" />
-      </TouchableOpacity>
+      </Pressable>
 
       {/* Creation Modal */}
       <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
-            <TouchableOpacity onPress={() => setIsModalVisible(false)}><Ionicons name="close" size={28} color={colors.textPrimary} /></TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Submit Report</Text>
+            <Pressable onPress={() => setIsModalVisible(false)}><Ionicons name="close" size={28} color={colors.textPrimary} /></Pressable>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{editTarget ? 'Edit Report' : 'Submit Report'}</Text>
             <View style={{ width: 28 }} />
           </View>
           
@@ -269,17 +312,17 @@ export default function LostAndFoundScreen({ navigation }: any) {
             <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
               
               <View style={[styles.toggleContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <TouchableOpacity style={[styles.toggleBtn, form.reportType === 'Lost' && { backgroundColor: '#D32F2F' }]} onPress={() => setForm({...form, reportType: 'Lost'})}>
+                <Pressable style={[styles.toggleBtn, form.reportType === 'Lost' && { backgroundColor: '#D32F2F' }]} onPress={() => setForm({...form, reportType: 'Lost'})}>
                   <Text style={[styles.toggleText, { color: form.reportType === 'Lost' ? '#FFF' : colors.textPrimary }]}>I Lost a Pet</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.toggleBtn, form.reportType === 'Found' && { backgroundColor: '#4CAF50' }]} onPress={() => setForm({...form, reportType: 'Found'})}>
+                </Pressable>
+                <Pressable style={[styles.toggleBtn, form.reportType === 'Found' && { backgroundColor: '#4CAF50' }]} onPress={() => setForm({...form, reportType: 'Found'})}>
                   <Text style={[styles.toggleText, { color: form.reportType === 'Found' ? '#FFF' : colors.textPrimary }]}>I Found a Pet</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
 
-              <TouchableOpacity style={[styles.imagePickerContainer, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={pickImage}>
+              <Pressable style={[styles.imagePickerContainer, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={pickImage}>
                 {selectedImage ? <Image source={{ uri: selectedImage }} style={styles.previewImage} /> : <View style={styles.imagePlaceholder}><Ionicons name="camera-outline" size={40} color={colors.textSecondary} /><Text style={{ color: colors.textSecondary, marginTop: 8 }}>Add Photo (Important!)</Text></View>}
-              </TouchableOpacity>
+              </Pressable>
 
               <CustomDropdown label="Pet Category *" value={form.petCategory} options={CATEGORIES} onSelect={(val) => setForm({...form, petCategory: val})} />
               

@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+﻿import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,12 +32,12 @@ export default function PetChatsScreen({ navigation }: any) {
       <View style={styles.headerRow}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Messages</Text>
         <View style={{ flexDirection: 'row' }}>
-          <TouchableOpacity style={{ marginRight: 16 }} onPress={() => navigation.navigate('ChatNotifications')}>
+          <Pressable style={{ marginRight: 16 }} onPress={() => navigation.navigate('ChatNotifications')}>
             <Ionicons name="notifications-outline" size={26} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('AddNewUsersMessages')}>
+          </Pressable>
+          <Pressable onPress={() => navigation.navigate('AddNewUsersMessages')}>
             <Ionicons name="add-circle-outline" size={26} color={colors.primary} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
@@ -57,7 +57,7 @@ export default function PetChatsScreen({ navigation }: any) {
             </View>
           }
           renderItem={({ item }) => (
-            <TouchableOpacity 
+            <Pressable 
               style={[styles.conversationCard, { borderBottomColor: colors.border }]}
               onPress={() => navigation.navigate('ChatScreen', { receiverId: item.partnerId, receiverName: item.partnerName, senderId: currentUserId })}
             >
@@ -73,7 +73,7 @@ export default function PetChatsScreen({ navigation }: any) {
                   {item.latestMessage}
                 </Text>
               </View>
-            </TouchableOpacity>
+            </Pressable>
           )}
         />
       )}

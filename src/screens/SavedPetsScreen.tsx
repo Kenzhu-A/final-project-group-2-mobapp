@@ -1,7 +1,7 @@
-// [SAVED-PETS] Saved tab — two sub-tabs: Pets (AsyncStorage) + Posts (AsyncStorage)
+﻿// [SAVED-PETS] Saved tab — two sub-tabs: Pets (AsyncStorage) + Posts (AsyncStorage)
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity,
+  View, Text, StyleSheet, FlatList, TextInput, Pressable,
   ScrollView, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,7 +9,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useSavedPets } from '../hooks/useSavedPets';
-import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { api } from '../services/api';
 import PetCard from '../components/PetCard';
 import GeneralPostCard from '../components/GeneralPostCard';
@@ -41,8 +40,6 @@ export default function SavedPetsScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
 
   // Pets tab filter state
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebouncedValue(search, 250);
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   // [SAVED-PETS] load saved posts: read IDs from AsyncStorage, fetch all posts, filter
@@ -77,19 +74,14 @@ export default function SavedPetsScreen({ navigation }: any) {
   };
 
   const filteredPets = useMemo(() => {
-    const q = debouncedSearch.toLowerCase();
     return savedPets.filter((p) => {
       if (selectedCategory !== 'All') {
         const opt = CATEGORY_OPTIONS.find((o) => o.key === selectedCategory);
         if (opt?.dbValue && p.category !== opt.dbValue) return false;
       }
-      if (q) {
-        const hay = `${p.pet_name || ''} ${p.breed || ''} ${p.location || ''}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
       return true;
     });
-  }, [savedPets, selectedCategory, debouncedSearch]);
+  }, [savedPets, selectedCategory]);
 
   const categoryCounts = useMemo(() => {
     const c: Record<string, number> = { All: savedPets.length };
@@ -101,32 +93,14 @@ export default function SavedPetsScreen({ navigation }: any) {
 
   const loading = petsLoading || postsLoading;
 
-  // Header shown above the pets grid (search + chips + count)
+  // Header shown above the pets grid (category chips + count)
   const PetsHeader = (
     <View style={{ paddingTop: 12 }}>
-      <View style={[styles.searchRow, { paddingHorizontal: 20 }]}>
-        <View style={[styles.searchPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name="search" size={18} color={colors.textSecondary} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder="Search breed, name, location"
-            placeholderTextColor={colors.textSecondary}
-            value={search}
-            onChangeText={setSearch}
-          />
-          {!!search && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, paddingLeft: 20 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingLeft: 20 }}>
         {CATEGORY_OPTIONS.map((opt) => {
           const active = selectedCategory === opt.key;
           return (
-            <TouchableOpacity
+            <Pressable
               key={opt.key}
               onPress={() => setSelectedCategory(opt.key)}
               style={[styles.chip, { borderColor: colors.border }, active && { backgroundColor: colors.textPrimary, borderColor: colors.textPrimary }]}
@@ -135,13 +109,13 @@ export default function SavedPetsScreen({ navigation }: any) {
               <Text style={[styles.chipCount, { color: active ? '#FFF' : colors.textSecondary }]}>
                 {' '}{categoryCounts[opt.key] ?? 0}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
         <View style={{ width: 20 }} />
       </ScrollView>
 
-      <Text style={[styles.eyebrow, { color: colors.textSecondary, paddingHorizontal: 20, marginTop: 14, marginBottom: 4 }]}>
+      <Text style={[styles.eyebrow, { color: colors.textSecondary, paddingHorizontal: 20, marginTop: 12, marginBottom: 4 }]}>
         {filteredPets.length} SAVED PET{filteredPets.length !== 1 ? 'S' : ''}
       </Text>
     </View>
@@ -155,12 +129,12 @@ export default function SavedPetsScreen({ navigation }: any) {
       {/* [SAVED-PETS] tabs — same underline style as LikedPetsAndPostsScreen */}
       <View style={[styles.tabRow, { borderBottomColor: colors.border }]}>
         {(['pets', 'posts'] as Tab[]).map((t) => (
-          <TouchableOpacity key={t} style={styles.tab} onPress={() => setActiveTab(t)}>
+          <Pressable key={t} style={styles.tab} onPress={() => setActiveTab(t)}>
             <Text style={[styles.tabText, { color: activeTab === t ? colors.primary : colors.textSecondary }]}>
               {t === 'pets' ? `Pets (${savedPets.length})` : `Posts (${savedPosts.length})`}
             </Text>
             {activeTab === t && <View style={[styles.tabUnderline, { backgroundColor: colors.primary }]} />}
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
 
