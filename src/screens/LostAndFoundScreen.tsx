@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, Linking } from 'react-native';
+// [LOST-FOUND] Lost & Found report feed + create modal
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, Linking, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,8 +20,10 @@ export default function LostAndFoundScreen({ navigation }: any) {
   
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filterType, setFilterType] = useState<'All' | 'Lost' | 'Found'>('All');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserName, setCurrentUserName] = useState<string>('');
 
   // Modal State
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -36,17 +39,23 @@ export default function LostAndFoundScreen({ navigation }: any) {
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     try {
-      const data = await api.getLostAndFoundReports();
+      const [data, uid, uname] = await Promise.all([
+        api.getLostAndFoundReports(),
+        AsyncStorage.getItem('userId'),
+        AsyncStorage.getItem('userFullName').catch(() => ''),
+      ]);
       setReports(data);
-      const uid = await AsyncStorage.getItem('userId');
       setCurrentUserId(uid);
-    } catch (error) { console.error(error); } 
-    finally { setLoading(false); }
-  };
+      setCurrentUserName(uname || '');
+    } catch (error) { console.error(error); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
 
-  useFocusEffect(useCallback(() => { fetchReports(); }, []));
+  useFocusEffect(useCallback(() => { fetchReports(); }, [fetchReports]));
+
+  const onRefresh = () => { setRefreshing(true); fetchReports(); };
 
   const filteredReports = reports.filter(r => filterType === 'All' || r.report_type === filterType);
 
@@ -120,72 +129,125 @@ export default function LostAndFoundScreen({ navigation }: any) {
         <View style={{ width: 24 }} />
       </View>
 
-      {/* Filter Tabs */}
-      <View style={[styles.filterContainer, { backgroundColor: colors.background }]}>
-        {['All', 'Lost', 'Found'].map(type => (
-          <TouchableOpacity 
-            key={type} 
-            style={[styles.filterBtn, filterType === type && { backgroundColor: colors.primary, borderColor: colors.primary }]}
-            onPress={() => setFilterType(type as any)}
-          >
-            <Text style={[styles.filterText, { color: filterType === type ? '#FFF' : colors.textSecondary }]}>{type}</Text>
-          </TouchableOpacity>
-        ))}
+      {/* [LOST-FOUND] filter tabs — same underline style as LikedPetsAndPostsScreen */}
+      <View style={[styles.tabRow, { borderBottomColor: colors.border }]}>
+        {(['All', 'Lost', 'Found'] as const).map((type) => {
+          const active = filterType === type;
+          const activeColor = type === 'Lost' ? '#D32F2F' : type === 'Found' ? '#4CAF50' : colors.primary;
+          const count = type === 'All' ? reports.length : reports.filter(r => r.report_type === type).length;
+          return (
+            <TouchableOpacity key={type} style={styles.tab} onPress={() => setFilterType(type)}>
+              <Text style={[styles.tabText, { color: active ? activeColor : colors.textSecondary }]}>
+                {type} ({count})
+              </Text>
+              {active && <View style={[styles.tabUnderline, { backgroundColor: activeColor }]} />}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
-      {/* Feed List */}
+      {/* [LOST-FOUND] feed */}
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
-      ) : filteredReports.length === 0 ? (
-        <View style={styles.center}>
-          <Ionicons name="search" size={64} color={colors.border} />
-          <Text style={{ color: colors.textSecondary, marginTop: 16, fontFamily: 'DMSans_400Regular' }}>No reports found.</Text>
-        </View>
       ) : (
         <FlatList
           data={filteredReports}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-          renderItem={({ item }) => (
-            <View style={[styles.reportCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              
-              <View style={styles.cardHeader}>
-                <View style={styles.headerLeft}>
-                  <Image source={item.owner?.avatar_url ? { uri: item.owner.avatar_url } : require('../../assets/adaptive-icon.png')} style={styles.avatar} />
-                  <View>
-                    <Text style={[styles.userName, { color: colors.textPrimary }]}>{item.owner?.full_name}</Text>
-                    <Text style={{ fontSize: 11, color: colors.textSecondary }}>{new Date(item.created_at).toLocaleDateString()}</Text>
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+          ListEmptyComponent={
+            <View style={styles.center}>
+              <Ionicons name="search-outline" size={56} color={colors.border} />
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No reports yet.</Text>
+              <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
+                {filterType === 'All'
+                  ? 'Be the first to report a lost or found pet.'
+                  : `No "${filterType}" reports at the moment.`}
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => {
+            const isLost = item.report_type === 'Lost';
+            const badgeColor = isLost ? '#D32F2F' : '#4CAF50';
+            const isOwner = item.owner_id === currentUserId;
+            return (
+              <View style={[styles.reportCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+
+                {/* [LOST-FOUND] poster row */}
+                <View style={styles.cardHeader}>
+                  <View style={styles.headerLeft}>
+                    <Image
+                      source={item.owner?.avatar_url ? { uri: item.owner.avatar_url } : require('../../assets/adaptive-icon.png')}
+                      style={styles.avatar}
+                    />
+                    <View>
+                      <Text style={[styles.userName, { color: colors.textPrimary }]}>{item.owner?.full_name || 'Unknown'}</Text>
+                      <Text style={[styles.dateText, { color: colors.textSecondary }]}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                    </View>
+                  </View>
+                  {/* [LOST-FOUND] resolve — icon + text forced inline */}
+                  {isOwner && (
+                    <TouchableOpacity onPress={() => handleResolve(item.id)} style={[styles.resolveBtn, { borderColor: '#4CAF50' }]}>
+                      <Ionicons name="checkmark-circle-outline" size={14} color="#4CAF50" />
+                      <Text style={[styles.resolveBtnText, { color: '#4CAF50' }]}>Resolved</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {item.image_url && <Image source={{ uri: item.image_url }} style={styles.reportImage} />}
+
+                <View style={styles.reportDetails}>
+                  {/* [LOST-FOUND] name + badge on the same row — badge right-aligned for emphasis */}
+                  <View style={styles.nameRow}>
+                    <Text style={[styles.petName, { color: colors.textPrimary }]} numberOfLines={1}>
+                      {item.pet_name || item.pet_category}
+                    </Text>
+                    <View style={[styles.typeBadge, { backgroundColor: badgeColor }]}>
+                      <Text style={styles.typeText}>{item.report_type.toUpperCase()} · {item.pet_category}</Text>
+                    </View>
+                  </View>
+
+                  <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={3}>
+                    {item.description}
+                  </Text>
+
+                  {/* [LOST-FOUND] location — icon baseline-aligned with text */}
+                  <View style={styles.locationRow}>
+                    <Ionicons name="location-sharp" size={14} color={colors.primary} style={{ marginTop: 1 }} />
+                    <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={2}>
+                      {item.location}
+                    </Text>
+                  </View>
+
+                  {/* action buttons */}
+                  <View style={styles.actionRow}>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { borderColor: colors.border, flex: 1 }]}
+                      onPress={() => Linking.openURL(`tel:${item.contact_info}`)}
+                    >
+                      <Ionicons name="call-outline" size={15} color={colors.primary} />
+                      <Text style={[styles.actionBtnText, { color: colors.primary }]}>Call</Text>
+                    </TouchableOpacity>
+
+                    {!isOwner && (
+                      <TouchableOpacity
+                        style={[styles.actionBtn, { backgroundColor: colors.primary, borderColor: colors.primary, flex: 1 }]}
+                        onPress={() => navigation.navigate('ChatScreen', {
+                          receiverId: item.owner_id,
+                          receiverName: item.owner?.full_name || 'Poster',
+                          senderId: currentUserId,
+                          initialMessage: `Hi! I saw your ${item.report_type.toLowerCase()} pet report for a ${item.pet_category}${item.pet_name ? ` named ${item.pet_name}` : ''}. Can I help?`,
+                        })}
+                      >
+                        <Ionicons name="chatbubble-outline" size={15} color="#FFF" />
+                        <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Message</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
-                {item.owner_id === currentUserId && (
-                  <TouchableOpacity onPress={() => handleResolve(item.id)} style={[styles.resolveBtn, { borderColor: colors.primary }]}>
-                    <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'DMSans_700Bold' }}>Resolve</Text>
-                  </TouchableOpacity>
-                )}
               </View>
-
-              {item.image_url && <Image source={{ uri: item.image_url }} style={styles.reportImage} />}
-              
-              <View style={styles.reportDetails}>
-                <View style={[styles.typeBadge, { backgroundColor: item.report_type === 'Lost' ? '#D32F2F' : '#4CAF50' }]}>
-                  <Text style={styles.typeText}>{item.report_type} {item.pet_category}</Text>
-                </View>
-                
-                {item.pet_name && <Text style={[styles.petName, { color: colors.textPrimary }]}>{item.pet_name}</Text>}
-                <Text style={[styles.description, { color: colors.textSecondary }]}>{item.description}</Text>
-                
-                <View style={styles.infoRow}>
-                  <Ionicons name="location" size={16} color={colors.primary} style={{ marginRight: 6 }} />
-                  <Text style={[styles.infoText, { color: colors.textPrimary }]} numberOfLines={2}>{item.location}</Text>
-                </View>
-                
-                <TouchableOpacity style={styles.infoRow} onPress={() => Linking.openURL(`tel:${item.contact_info}`)}>
-                  <Ionicons name="call" size={16} color={colors.primary} style={{ marginRight: 6 }} />
-                  <Text style={[styles.infoText, { color: colors.primary, textDecorationLine: 'underline' }]}>{item.contact_info}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+            );
+          }}
         />
       )}
 
@@ -247,24 +309,36 @@ const styles = StyleSheet.create({
   backBtn: { padding: 4 },
   headerTitle: { fontSize: 20, fontFamily: 'DMSerifDisplay_400Regular' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  filterContainer: { flexDirection: 'row', padding: 16, gap: 12 },
-  filterBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: 'transparent' },
-  filterText: { fontSize: 14, fontFamily: 'DMSans_700Bold' },
+  tabRow: { flexDirection: 'row', borderBottomWidth: 1 },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: 14, position: 'relative' },
+  tabText: { fontSize: 15, fontFamily: 'DMSans_700Bold' },
+  tabUnderline: { position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 2, borderRadius: 1 },
+  emptyTitle: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 18, marginTop: 12 },
+  emptySub: { fontFamily: 'DMSans_400Regular', fontSize: 13, marginTop: 6, textAlign: 'center' },
+  dateText: { fontSize: 11, fontFamily: 'DMSans_400Regular' },
+  resolveBtnText: { fontSize: 12, fontFamily: 'DMSans_700Bold' },
+  actionRow: { flexDirection: 'row', gap: 10 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 12, borderWidth: 1, gap: 6 },
+  actionBtnText: { fontSize: 13, fontFamily: 'DMSans_700Bold' },
   
   reportCard: { borderRadius: 16, borderWidth: 1, marginBottom: 16, overflow: 'hidden' },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12 },
-  headerLeft: { flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 36, height: 36, borderRadius: 18, marginRight: 12 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  avatar: { width: 38, height: 38, borderRadius: 19, marginRight: 10 },
   userName: { fontSize: 14, fontFamily: 'DMSans_700Bold' },
-  resolveBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1 },
-  reportImage: { width: '100%', height: 250, resizeMode: 'cover' },
-  reportDetails: { padding: 16 },
-  typeBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginBottom: 8 },
-  typeText: { color: '#FFF', fontSize: 12, fontFamily: 'DMSans_700Bold' },
-  petName: { fontSize: 18, fontFamily: 'DMSerifDisplay_400Regular', marginBottom: 4 },
-  description: { fontSize: 14, fontFamily: 'DMSans_400Regular', lineHeight: 20, marginBottom: 12 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  infoText: { fontSize: 14, fontFamily: 'DMSans_700Bold', flex: 1 },
+  // [LOST-FOUND] resolve button — flexDirection row keeps icon+text on one line
+  resolveBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1, gap: 4 },
+  reportImage: { width: '100%', height: 220, resizeMode: 'cover' },
+  reportDetails: { padding: 14 },
+  // [LOST-FOUND] name + badge side by side
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, gap: 8 },
+  typeBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, flexShrink: 0 },
+  typeText: { color: '#FFF', fontSize: 11, fontFamily: 'DMSans_700Bold' },
+  petName: { fontSize: 18, fontFamily: 'DMSerifDisplay_400Regular', flex: 1 },
+  description: { fontSize: 13, fontFamily: 'DMSans_400Regular', lineHeight: 19, color: '#666', marginBottom: 10 },
+  // [LOST-FOUND] location row — icon top-aligned with first line of text
+  locationRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 4, marginBottom: 14 },
+  locationText: { fontSize: 13, fontFamily: 'DMSans_400Regular', flex: 1, lineHeight: 18 },
   
   fab: { position: 'absolute', bottom: 24, right: 24, width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
   

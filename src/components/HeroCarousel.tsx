@@ -14,9 +14,10 @@ interface Props {
   onPressFeatured: () => void;
   onSayHi: () => void;
   onPressLostFound: () => void;
+  isOwnerOfFeatured?: boolean; // [HERO-CAROUSEL] passed down to FeaturedPetCard
 }
 
-export default function HeroCarousel({ featuredPet, onPressFeatured, onSayHi, onPressLostFound }: Props) {
+export default function HeroCarousel({ featuredPet, onPressFeatured, onSayHi, onPressLostFound, isOwnerOfFeatured = false }: Props) {
   const { colors } = useTheme();
   const slides = featuredPet ? ['featured', 'lostfound'] : ['lostfound'];
   const [activeIdx, setActiveIdx] = useState(0);
@@ -62,6 +63,7 @@ export default function HeroCarousel({ featuredPet, onPressFeatured, onSayHi, on
               onPress={onPressFeatured}
               onSayHi={onSayHi}
               fixedHeight={CARD_H}
+              isOwner={isOwnerOfFeatured}
             />
           </View>
         )}

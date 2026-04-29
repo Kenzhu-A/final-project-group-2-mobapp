@@ -146,17 +146,6 @@ export default function ProfileScreen({ navigation, handleSignOut, setActiveTab 
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
 
-        {/* [DASHBOARD-REDESIGN] Saved Posts → switch to Saved tab in HomeScreen shell */}
-        <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => setActiveTab ? setActiveTab('saved') : null}>
-          <View style={styles.menuLeft}>
-            <View style={[styles.iconWrapper, { backgroundColor: colors.background }]}>
-              <Ionicons name="bookmark-outline" size={20} color={colors.textPrimary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.textPrimary }]}>Saved Posts</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
-
         {/* [LIKED-POSTS] Liked Posts → new unified LikedPetsAndPostsScreen */}
         <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('LikedPetsAndPostsScreen')}>
           <View style={styles.menuLeft}>

@@ -57,8 +57,8 @@ export default function BottomNavBar({ activeTab, setActiveTab }: Props) {
 
 const styles = StyleSheet.create({
   container: { position: 'absolute', left: 20, right: 20, height: 70, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderRadius: 35, paddingHorizontal: 10, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.15, shadowRadius: 10 },
-  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%' },
+  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', height: '28%' },
   standardIconWrapper: { alignItems: 'center', justifyContent: 'center' },
-  centerIconWrapper: { backgroundColor: '#F26419', width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', top: -20, position: 'absolute', shadowColor: '#F26419', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 8 },
+  centerIconWrapper: { backgroundColor: '#D85A30', width: 55, height: 55, borderRadius: 40, justifyContent: 'center', alignItems: 'center', top: -20, position: 'absolute', shadowColor: '#F26419', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 8 },
   navText: { fontSize: 10, marginTop: 4, fontFamily: 'DMSans_700Bold' },
 });

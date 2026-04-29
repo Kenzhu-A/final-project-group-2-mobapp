@@ -353,7 +353,11 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: userId, pet_id: petId }),
     });
-    if (!response.ok) throw new Error('Failed to save pet');
+    if (!response.ok) {
+      // [SAVED-PETS] surface the actual Supabase error so we can diagnose failures
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || 'Failed to save pet');
+    }
     return await response.json();
   },
 

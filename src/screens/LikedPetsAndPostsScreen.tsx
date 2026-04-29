@@ -15,6 +15,12 @@ import GeneralPostCard from '../components/GeneralPostCard';
 
 type Tab = 'pets' | 'posts';
 
+// [LIKED-POSTS] spacer keeps the last lone card half-width in a 2-col grid
+const SPACER_ID = '__spacer__';
+function withSpacer(data: any[]) {
+  return data.length % 2 !== 0 ? [...data, { id: SPACER_ID }] : data;
+}
+
 export default function LikedPetsAndPostsScreen({ navigation }: any) {
   const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<Tab>('pets');
@@ -73,7 +79,7 @@ export default function LikedPetsAndPostsScreen({ navigation }: any) {
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
       ) : activeTab === 'pets' ? (
         <FlatList
-          data={likedPets}
+          data={withSpacer(likedPets)}
           keyExtractor={(item) => String(item.id)}
           numColumns={2}
           columnWrapperStyle={{ gap: 12, paddingHorizontal: 20 }}
@@ -86,9 +92,10 @@ export default function LikedPetsAndPostsScreen({ navigation }: any) {
               <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Tap the heart on any pet card to like it.</Text>
             </View>
           }
-          renderItem={({ item }) => (
-            <PetCard pet={item} onPress={() => navigation.navigate('PetDetailsScreen', { petId: item.id })} />
-          )}
+          renderItem={({ item }) => {
+            if (item.id === SPACER_ID) return <View style={{ flex: 1 }} />;
+            return <PetCard pet={item} onPress={() => navigation.navigate('PetDetailsScreen', { petId: item.id })} />;
+          }}
         />
       ) : (
         <ScrollView

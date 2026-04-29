@@ -88,9 +88,12 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
       if (userId) {
         try {
           setProfile(await api.getUserProfile(userId));
-          // [DASHBOARD-REDESIGN] badge = count of conversations
-          const convs = await api.getConversations(userId).catch(() => []);
-          setNotifCount((convs as any[]).length);
+        } catch {}
+        // [PUSH-NOTIF] badge = unread notification count from AsyncStorage
+        try {
+          const raw = await AsyncStorage.getItem('snoutscout_notifications');
+          const notifs: any[] = raw ? JSON.parse(raw) : [];
+          setNotifCount(notifs.filter((n) => !n.read).length);
         } catch {}
       }
     } catch (e) {
@@ -148,8 +151,12 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
   // Near you strip: limited count shown horizontally
   const nearYouPets = filteredPets.slice(0, NEAR_YOU_LIMIT);
 
+  // [HERO-CAROUSEL] pick the pet with the most likes that has an image
   const featuredPet = useMemo(
-    () => pets.find((p) => p.image_url || (p.image_urls && p.image_urls.length > 0)),
+    () =>
+      pets
+        .filter((p) => p.image_url || (p.image_urls && p.image_urls.length > 0))
+        .sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))[0] || null,
     [pets]
   );
 
@@ -246,6 +253,7 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
           onPressFeatured={() => featuredPet && navigation.navigate('PetDetailsScreen', { petId: featuredPet.id })}
           onSayHi={() => featuredPet && handleSayHi(featuredPet)}
           onPressLostFound={() => navigation.navigate('LostAndFoundScreen')}
+          isOwnerOfFeatured={!!(featuredPet && profile?.id && featuredPet.owner_id === profile.id)}
         />
       </View>
 

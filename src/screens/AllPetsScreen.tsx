@@ -22,6 +22,12 @@ const CATEGORY_OPTIONS = [
   { key: 'Other', dbValue: 'Other' },
 ];
 
+// [DASHBOARD-REDESIGN] spacer keeps the last lone card half-width in a 2-col grid
+const SPACER_ID = '__spacer__';
+function withSpacer(data: any[]) {
+  return data.length % 2 !== 0 ? [...data, { id: SPACER_ID }] : data;
+}
+
 export default function AllPetsScreen({ navigation }: any) {
   const { colors } = useTheme();
   const [pets, setPets] = useState<any[]>([]);
@@ -125,7 +131,7 @@ export default function AllPetsScreen({ navigation }: any) {
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
-          data={filtered}
+          data={withSpacer(filtered)}
           keyExtractor={(item) => String(item.id)}
           numColumns={2}
           columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }}
@@ -143,9 +149,10 @@ export default function AllPetsScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
           }
-          renderItem={({ item }) => (
-            <PetCard pet={item} onPress={() => navigation.navigate('PetDetailsScreen', { petId: item.id })} />
-          )}
+          renderItem={({ item }) => {
+            if (item.id === SPACER_ID) return <View style={{ flex: 1 }} />;
+            return <PetCard pet={item} onPress={() => navigation.navigate('PetDetailsScreen', { petId: item.id })} />;
+          }}
         />
       )}
     </SafeAreaView>

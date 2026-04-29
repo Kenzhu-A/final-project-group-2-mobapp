@@ -8,9 +8,10 @@ interface Props {
   onPress: () => void;
   onSayHi: () => void;
   fixedHeight?: number; // [HERO-CAROUSEL] equal height across slides
+  isOwner?: boolean;   // [HERO-CAROUSEL] show "View Details" instead of "Say Hi" for own pets
 }
 
-export default function FeaturedPetCard({ pet, onPress, onSayHi, fixedHeight }: Props) {
+export default function FeaturedPetCard({ pet, onPress, onSayHi, fixedHeight, isOwner = false }: Props) {
   const { colors } = useTheme();
   if (!pet) return null;
 
@@ -26,9 +27,16 @@ export default function FeaturedPetCard({ pet, onPress, onSayHi, fixedHeight }: 
         <Text style={[styles.desc, { color: colors.textSecondary }]} numberOfLines={2}>
           {pet.description || `${pet.breed || pet.category}, ${pet.age} ${pet.age === 1 ? 'year' : 'years'} old.`}
         </Text>
-        <TouchableOpacity style={[styles.sayHi, { backgroundColor: colors.accent }]} onPress={onSayHi}>
-          <Text style={styles.sayHiText}>Say Hi 👋</Text>
-        </TouchableOpacity>
+        {/* [HERO-CAROUSEL] owner sees "View Details", others see "Say Hi" */}
+        {isOwner ? (
+          <TouchableOpacity style={[styles.sayHi, { backgroundColor: colors.primary }]} onPress={onPress}>
+            <Text style={styles.sayHiText}>View Details</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={[styles.sayHi, { backgroundColor: colors.accent }]} onPress={onSayHi}>
+            <Text style={styles.sayHiText}>Say Hi 👋</Text>
+          </TouchableOpacity>
+        )}
       </View>
       <Image source={{ uri: pet.image_url }} style={styles.image} />
     </TouchableOpacity>

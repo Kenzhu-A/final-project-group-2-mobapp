@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../services/api';
 
-export default function GeneralPostCard({ item, colors }: any) {
+export default function GeneralPostCard({ item, colors, onUnsave }: any) {
   const [expanded, setExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -20,11 +20,13 @@ export default function GeneralPostCard({ item, colors }: any) {
     AsyncStorage.getItem('userId').then(uid => {
       setCurrentUserId(uid);
       if (uid) {
+        // [SAVED-PETS] use String() on both sides to avoid number/string mismatch
+        const sid = String(item.id);
         AsyncStorage.getItem(`${uid}_likedPosts`).then(res => {
-          if (res && JSON.parse(res).includes(item.id)) setIsLiked(true);
+          if (res && JSON.parse(res).map(String).includes(sid)) setIsLiked(true);
         });
         AsyncStorage.getItem(`${uid}_savedPosts`).then(res => {
-          if (res && JSON.parse(res).includes(item.id)) setIsSaved(true);
+          if (res && JSON.parse(res).map(String).includes(sid)) setIsSaved(true);
         });
       }
     });
@@ -53,6 +55,9 @@ export default function GeneralPostCard({ item, colors }: any) {
     if (!currentUserId) return;
     const newSaved = !isSaved;
     setIsSaved(newSaved);
+    // [SAVED-PETS] notify parent before any await so the list updates instantly
+    if (!newSaved && onUnsave) onUnsave(item.id);
+    // persist to AsyncStorage in background
     const stored = await AsyncStorage.getItem(`${currentUserId}_savedPosts`);
     let savedArr = stored ? JSON.parse(stored) : [];
     if (newSaved) savedArr.push(item.id);
@@ -108,7 +113,8 @@ export default function GeneralPostCard({ item, colors }: any) {
   };
 
   return (
-    <View style={[styles.postContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+    // [COMMUNITY-FEED] card style — rounded corners, border, horizontal margin to align with other cards
+    <View style={[styles.postContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       
       <View style={styles.postHeader}>
         <View style={styles.postHeaderLeft}>
@@ -202,12 +208,12 @@ export default function GeneralPostCard({ item, colors }: any) {
 }
 
 const styles = StyleSheet.create({
-  postContainer: { borderBottomWidth: 0.5, paddingBottom: 16, marginBottom: 8 },
+  postContainer: { borderRadius: 16, borderWidth: 1, marginHorizontal: 16, marginBottom: 12, overflow: 'hidden', paddingBottom: 12 },
   postHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   postHeaderLeft: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 36, height: 36, borderRadius: 18, marginRight: 10, borderWidth: 1, borderColor: '#E9ECEF' },
   userName: { fontSize: 14, fontFamily: 'DMSans_700Bold' },
-  postImage: { width: '100%', height: 400, resizeMode: 'cover' },
+  postImage: { width: '100%', height: 280, resizeMode: 'cover' },
   actionBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
   actionLeft: { flexDirection: 'row', alignItems: 'center' },
   actionIcon: { marginRight: 16 },
