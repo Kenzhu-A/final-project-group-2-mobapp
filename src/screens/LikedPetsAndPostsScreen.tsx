@@ -1,7 +1,7 @@
-// [LIKED-POSTS] unified liked content — two tabs: Pets / Posts
+﻿// [LIKED-POSTS] unified liked content — two tabs: Pets / Posts
 import React, { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  View, Text, StyleSheet, FlatList, Pressable,
   ScrollView, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -57,21 +57,21 @@ export default function LikedPetsAndPostsScreen({ navigation }: any) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
+        <Pressable onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Liked Posts</Text>
       </View>
 
       {/* tabs */}
       <View style={[styles.tabRow, { borderBottomColor: colors.border }]}>
         {(['pets', 'posts'] as Tab[]).map((t) => (
-          <TouchableOpacity key={t} style={styles.tab} onPress={() => setActiveTab(t)}>
+          <Pressable key={t} style={styles.tab} onPress={() => setActiveTab(t)}>
             <Text style={[styles.tabText, { color: activeTab === t ? colors.primary : colors.textSecondary }]}>
               {t === 'pets' ? `Pets (${likedPets.length})` : `Posts (${likedPosts.length})`}
             </Text>
             {activeTab === t && <View style={[styles.tabUnderline, { backgroundColor: colors.primary }]} />}
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
 

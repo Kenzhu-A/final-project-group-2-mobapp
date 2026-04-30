@@ -1,8 +1,8 @@
-// [PUSH-NOTIF] Notifications screen — AsyncStorage-backed, supports delete + multi-select
+﻿// [PUSH-NOTIF] Notifications screen — AsyncStorage-backed, supports delete + multi-select
 import React, { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList,
-  Pressable, Alert, Platform,
+  View, Text, StyleSheet, Pressable, FlatList,
+  Alert, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -135,33 +135,33 @@ export default function ChatNotificationsScreen({ navigation }: any) {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       {/* header */}
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         {selectMode ? (
           <>
-            <TouchableOpacity onPress={cancelSelect} style={{ padding: 4 }}>
+            <Pressable onPress={cancelSelect} style={{ padding: 4 }}>
               <Ionicons name="close" size={24} color={colors.textPrimary} />
-            </TouchableOpacity>
+            </Pressable>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
               {selected.size} selected
             </Text>
-            <TouchableOpacity onPress={toggleSelectAll} style={{ padding: 4 }}>
+            <Pressable onPress={toggleSelectAll} style={{ padding: 4 }}>
               <Ionicons
                 name={allSelected ? 'checkbox' : 'checkbox-outline'}
                 size={22}
                 color={colors.primary}
               />
-            </TouchableOpacity>
+            </Pressable>
           </>
         ) : (
           <>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
+            <Pressable onPress={() => navigation.goBack()} style={{ padding: 4 }}>
               <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-            </TouchableOpacity>
+            </Pressable>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Notifications</Text>
             {notifications.length > 0 ? (
-              <TouchableOpacity onPress={clearAll} style={{ padding: 4 }}>
+              <Pressable onPress={clearAll} style={{ padding: 4 }}>
                 <Text style={[styles.clearText, { color: colors.primary }]}>Clear all</Text>
-              </TouchableOpacity>
+              </Pressable>
             ) : (
               <View style={{ width: 60 }} />
             )}
@@ -172,10 +172,10 @@ export default function ChatNotificationsScreen({ navigation }: any) {
       {/* [PUSH-NOTIF] multi-select delete bar */}
       {selectMode && selected.size > 0 && (
         <View style={[styles.deleteBar, { backgroundColor: '#FDECEA', borderTopColor: '#F5C6C6' }]}>
-          <TouchableOpacity style={styles.deleteBarBtn} onPress={deleteSelected}>
+          <Pressable style={styles.deleteBarBtn} onPress={deleteSelected}>
             <Ionicons name="trash-outline" size={18} color="#D32F2F" />
             <Text style={styles.deleteBarText}>Delete {selected.size} notification{selected.size > 1 ? 's' : ''}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       )}
 
@@ -232,13 +232,13 @@ export default function ChatNotificationsScreen({ navigation }: any) {
 
               {/* [PUSH-NOTIF] swipe-style delete button (shown when not in select mode) */}
               {!selectMode && (
-                <TouchableOpacity
+                <Pressable
                   onPress={() => deleteOne(item.id)}
                   hitSlop={8}
                   style={styles.deleteBtn}
                 >
                   <Ionicons name="trash-outline" size={18} color={colors.textSecondary} />
-                </TouchableOpacity>
+                </Pressable>
               )}
             </Pressable>
           );

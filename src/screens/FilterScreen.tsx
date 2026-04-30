@@ -1,6 +1,6 @@
-// [DASHBOARD-REDESIGN] full-screen filter with persistence (replaces bottom-sheet design)
+﻿// [DASHBOARD-REDESIGN] full-screen filter with persistence (replaces bottom-sheet design)
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
@@ -82,13 +82,13 @@ export default function FilterScreen({ route, navigation }: any) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={[styles.headerRow, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Pressable onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Filter & Search</Text>
-        <TouchableOpacity onPress={reset}>
+        <Pressable onPress={reset}>
           <Text style={[styles.resetText, { color: colors.primary }]}>Reset</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
@@ -97,10 +97,10 @@ export default function FilterScreen({ route, navigation }: any) {
           {SPECIES.map((s) => {
             const active = species.includes(s);
             return (
-              <TouchableOpacity key={s} onPress={() => toggle(species, s, setSpecies)}
+              <Pressable key={s} onPress={() => toggle(species, s, setSpecies)}
                 style={[styles.chip, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary : 'transparent' }]}>
                 <Text style={{ color: active ? '#FFF' : colors.textPrimary, fontFamily: 'DMSans_700Bold' }}>{s}</Text>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>
@@ -110,10 +110,10 @@ export default function FilterScreen({ route, navigation }: any) {
           {AGE_BUCKETS.map((b) => {
             const active = ageBucket === b.key;
             return (
-              <TouchableOpacity key={b.key || 'any'} onPress={() => setAgeBucket(b.key)}
+              <Pressable key={b.key || 'any'} onPress={() => setAgeBucket(b.key)}
                 style={[styles.chip, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary : 'transparent' }]}>
                 <Text style={{ color: active ? '#FFF' : colors.textPrimary, fontFamily: 'DMSans_700Bold' }}>{b.label}</Text>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>
@@ -123,10 +123,10 @@ export default function FilterScreen({ route, navigation }: any) {
           {SIZES.map((s) => {
             const active = size.includes(s.key);
             return (
-              <TouchableOpacity key={s.key} onPress={() => toggle(size, s.key, setSize)}
+              <Pressable key={s.key} onPress={() => toggle(size, s.key, setSize)}
                 style={[styles.chip, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary : 'transparent' }]}>
                 <Text style={{ color: active ? '#FFF' : colors.textPrimary, fontFamily: 'DMSans_700Bold' }}>{s.label}</Text>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>
@@ -154,9 +154,9 @@ export default function FilterScreen({ route, navigation }: any) {
       </ScrollView>
 
       <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={apply} style={[styles.applyBtn, { backgroundColor: colors.accent }]}>
+        <Pressable onPress={apply} style={[styles.applyBtn, { backgroundColor: colors.accent }]}>
           <Text style={styles.applyText}>Apply ({previewCount})</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </SafeAreaView>
   );

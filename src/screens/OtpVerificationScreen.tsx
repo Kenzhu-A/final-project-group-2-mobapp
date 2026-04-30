@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, Keyboard } from 'react-native';
+﻿import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Alert, Image, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -59,9 +59,9 @@ export default function OtpVerificationScreen({ route, navigation }: any) {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
       <View style={styles.content}>
         <Image source={require('../../assets/resetdog.png')} style={styles.image} resizeMode="contain" />
@@ -79,9 +79,9 @@ export default function OtpVerificationScreen({ route, navigation }: any) {
         
         <View style={styles.resendContainer}>
           <Text style={[styles.resendText, { color: colors.textSecondary }]}>Didn't receive the code? </Text>
-          <TouchableOpacity onPress={handleResend}>
+          <Pressable onPress={handleResend}>
             <Text style={[styles.resendLink, { color: colors.primary }]}>Resend</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </SafeAreaView>

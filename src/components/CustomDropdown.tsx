@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal, FlatList, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
@@ -19,7 +19,7 @@ export default function CustomDropdown({ label, value, onSelect, options, placeh
     <View style={styles.container}>
       {label ? <Text style={[styles.label, { color: colors.textPrimary }]}>{label}</Text> : null}
       
-      <TouchableOpacity 
+      <Pressable 
         style={[styles.dropdownButton, { backgroundColor: colors.background, borderColor: colors.border }]} 
         onPress={() => setModalVisible(true)}
       >
@@ -27,24 +27,24 @@ export default function CustomDropdown({ label, value, onSelect, options, placeh
           {value || placeholder}
         </Text>
         <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
-      </TouchableOpacity>
+      </Pressable>
 
       <Modal visible={modalVisible} animationType="slide" transparent={true}>
         <SafeAreaView style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{label}</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <Pressable onPress={() => setModalVisible(false)}>
                 <Ionicons name="close" size={28} color={colors.textPrimary} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             <FlatList
               data={options}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
-                <TouchableOpacity 
-                  style={[styles.optionItem, { borderBottomColor: colors.border }]} 
+                <Pressable
+                  style={[styles.optionItem, { borderBottomColor: colors.border }]}
                   onPress={() => {
                     onSelect(item);
                     setModalVisible(false);
@@ -54,7 +54,7 @@ export default function CustomDropdown({ label, value, onSelect, options, placeh
                     {item}
                   </Text>
                   {value === item && <Ionicons name="checkmark" size={20} color={colors.primary} />}
-                </TouchableOpacity>
+                </Pressable>
               )}
             />
           </View>

@@ -1,17 +1,18 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import { 
   View, Text, StyleSheet, KeyboardAvoidingView, Platform, 
-  ScrollView, TouchableWithoutFeedback, Keyboard, TouchableOpacity, BackHandler, Alert 
+  ScrollView, TouchableWithoutFeedback, Keyboard, Pressable, BackHandler, Alert 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import CustomInput from '../components/CustomInput';
 import PrimaryButton from '../components/PrimaryButton';
-import { theme } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 import { Validators } from '../utils/validators';
 import { api } from '../services/api';
 
 export default function SignupScreen({ navigation }: any) {
+  const { colors } = useTheme();
   const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' });
   const [errors, setErrors] = useState({ fullName: '', email: '', password: '', confirmPassword: '' });
   const [isLoading, setIsLoading] = useState(false);
@@ -53,14 +54,14 @@ export default function SignupScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-            
+
             <View style={styles.header}>
-              <Text style={styles.title}>Create Account</Text>
-              <Text style={styles.subtitle}>Join the SnoutScout community.</Text>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>Create Account</Text>
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Join the SnoutScout community.</Text>
             </View>
 
             <View style={styles.form}>
@@ -91,10 +92,10 @@ export default function SignupScreen({ navigation }: any) {
             <View style={styles.footer}>
               <PrimaryButton title="Create Account" onPress={handleSignup} loading={isLoading} />
               <View style={styles.loginRow}>
-                <Text style={styles.footerText}>Already have an account? </Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                  <Text style={styles.loginText}>Log In</Text>
-                </TouchableOpacity>
+                <Text style={[styles.footerText, { color: colors.textSecondary }]}>Already have an account? </Text>
+                <Pressable onPress={() => navigation.navigate('Login')}>
+                  <Text style={[styles.loginText, { color: colors.primary }]}>Log In</Text>
+                </Pressable>
               </View>
             </View>
 
@@ -106,15 +107,15 @@ export default function SignupScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  safeArea: { flex: 1 },
   container: { flex: 1 },
-  scroll: { flexGrow: 1, padding: theme.spacing.l, justifyContent: 'center' },
-  header: { marginBottom: theme.spacing.xl, marginTop: theme.spacing.l },
-  title: { fontSize: theme.typography.titleSize, color: theme.colors.textDark, marginBottom: theme.spacing.xs, fontFamily: theme.typography.headingFont },
-  subtitle: { fontSize: theme.typography.subtitleSize, color: theme.colors.textLight, fontFamily: theme.typography.bodyFont },
-  form: { marginBottom: theme.spacing.m },
-  footer: { marginTop: 'auto', paddingBottom: theme.spacing.m },
-  loginRow: { flexDirection: 'row', justifyContent: 'center', marginTop: theme.spacing.s },
-  footerText: { color: theme.colors.textLight, fontSize: 14, fontFamily: theme.typography.bodyFont },
-  loginText: { color: theme.colors.primary, fontSize: 14, fontFamily: theme.typography.bodyFontBold },
+  scroll: { flexGrow: 1, padding: 24, justifyContent: 'center' },
+  header: { marginBottom: 32, marginTop: 24 },
+  title: { fontSize: 28, marginBottom: 4, fontFamily: 'DMSerifDisplay_400Regular' },
+  subtitle: { fontSize: 15, fontFamily: 'DMSans_400Regular' },
+  form: { marginBottom: 16 },
+  footer: { marginTop: 'auto', paddingBottom: 16 },
+  loginRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 8 },
+  footerText: { fontSize: 14, fontFamily: 'DMSans_400Regular' },
+  loginText: { fontSize: 14, fontFamily: 'DMSans_700Bold' },
 });

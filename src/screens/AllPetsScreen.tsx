@@ -1,8 +1,8 @@
-// [DASHBOARD-REDESIGN] full adoption listing — navigated to from "See all" on Dashboard
+﻿// [DASHBOARD-REDESIGN] full adoption listing — navigated to from "See all" on Dashboard
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TextInput,
-  TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator,
+  Pressable, ScrollView, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -85,14 +85,14 @@ export default function AllPetsScreen({ navigation }: any) {
             onChangeText={setSearch}
           />
           {!!search && (
-            <TouchableOpacity onPress={() => setSearch('')}>
+            <Pressable onPress={() => setSearch('')}>
               <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
-        <TouchableOpacity style={[styles.filterBtn, { backgroundColor: colors.accent }]} onPress={openFilter}>
+        <Pressable style={[styles.filterBtn, { backgroundColor: colors.accent }]} onPress={openFilter}>
           <Ionicons name="options" size={20} color="#FFF" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* category chips */}
@@ -100,13 +100,13 @@ export default function AllPetsScreen({ navigation }: any) {
         {CATEGORY_OPTIONS.map((opt) => {
           const active = selectedCategory === opt.key;
           return (
-            <TouchableOpacity
+            <Pressable
               key={opt.key}
               onPress={() => setSelectedCategory(opt.key)}
               style={[styles.chip, { borderColor: colors.border }, active && { backgroundColor: colors.textPrimary, borderColor: colors.textPrimary }]}
             >
               <Text style={[styles.chipText, { color: active ? '#FFF' : colors.textPrimary }]}>{opt.key}</Text>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
         <View style={{ width: 16 }} />
@@ -121,9 +121,9 @@ export default function AllPetsScreen({ navigation }: any) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
+        <Pressable onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
           <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>All Pets</Text>
       </View>
 
@@ -144,9 +144,9 @@ export default function AllPetsScreen({ navigation }: any) {
               <Text style={{ color: colors.textSecondary, fontFamily: 'DMSans_400Regular', marginTop: 12 }}>
                 No pets match your filters.
               </Text>
-              <TouchableOpacity onPress={() => { setSearch(''); setSelectedCategory('All'); }} style={{ marginTop: 12 }}>
+              <Pressable onPress={() => { setSearch(''); setSelectedCategory('All'); }} style={{ marginTop: 12 }}>
                 <Text style={{ color: colors.primary, fontFamily: 'DMSans_700Bold' }}>Clear filters</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           }
           renderItem={({ item }) => {

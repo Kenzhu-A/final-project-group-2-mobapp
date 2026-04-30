@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, Alert, Modal, TouchableWithoutFeedback } from 'react-native';
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TextInput, Pressable, FlatList, StyleSheet, KeyboardAvoidingView, Platform, Alert, Modal, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { io, Socket } from 'socket.io-client';
@@ -112,10 +112,9 @@ export default function ChatScreen({ route, navigation }: any) {
   const renderMessage = ({ item }: { item: any }) => {
     const isMe = item.sender_id === senderId;
     return (
-      <TouchableOpacity 
+      <Pressable 
         onLongPress={() => setSelectedMessage(item)}
         delayLongPress={300}
-        activeOpacity={0.8}
         style={[
           styles.messageBubble, 
           isMe ? { backgroundColor: colors.primary, borderBottomRightRadius: 4, alignSelf: 'flex-end' } 
@@ -124,7 +123,7 @@ export default function ChatScreen({ route, navigation }: any) {
         ]}
       >
         <Text style={[styles.messageText, isMe ? { color: '#FFF' } : { color: colors.textPrimary }]}>{item.text}</Text>
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
@@ -133,13 +132,13 @@ export default function ChatScreen({ route, navigation }: any) {
       
       {/* NO TOP BAR DESIGN: Flush background, transparent, minimalist icons */}
       <View style={[styles.cleanHeader, { backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary, flex: 1, textAlign: 'center' }]}>{receiverName}</Text>
-        <TouchableOpacity onPress={handleDeleteConversation} style={styles.optionsBtn}>
+        <Pressable onPress={handleDeleteConversation} style={styles.optionsBtn}>
           <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container} keyboardVerticalOffset={Platform.OS === 'android' ? 25 : 0}>
@@ -157,9 +156,9 @@ export default function ChatScreen({ route, navigation }: any) {
           {editingMessageId && (
             <View style={styles.editingBanner}>
               <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'DMSans_700Bold' }}>Editing message...</Text>
-              <TouchableOpacity onPress={() => { setEditingMessageId(null); setInputText(''); }}>
+              <Pressable onPress={() => { setEditingMessageId(null); setInputText(''); }}>
                 <Ionicons name="close-circle" size={16} color={colors.textSecondary} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
           )}
           <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -171,9 +170,9 @@ export default function ChatScreen({ route, navigation }: any) {
               placeholderTextColor={colors.textSecondary}
               multiline
             />
-            <TouchableOpacity style={[styles.sendButton, { backgroundColor: inputText.trim() ? colors.primary : colors.border }]} onPress={sendMessage}>
+            <Pressable style={[styles.sendButton, { backgroundColor: inputText.trim() ? colors.primary : colors.border }]} onPress={sendMessage}>
               <Ionicons name="send" size={16} color="#FFF" />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
 
@@ -185,26 +184,26 @@ export default function ChatScreen({ route, navigation }: any) {
           <View style={styles.modalOverlay}>
             <View style={[styles.optionsMenu, { backgroundColor: colors.surface }]}>
               
-              <TouchableOpacity style={[styles.optionItem, { borderBottomColor: colors.border }]} onPress={handleCopy}>
+              <Pressable style={[styles.optionItem, { borderBottomColor: colors.border }]} onPress={handleCopy}>
                 <Ionicons name="copy-outline" size={20} color={colors.textPrimary} style={styles.optionIcon} />
                 <Text style={[styles.optionText, { color: colors.textPrimary }]}>Copy Text</Text>
-              </TouchableOpacity>
+              </Pressable>
               
               {selectedMessage?.sender_id === senderId && (
                 <>
-                  <TouchableOpacity style={[styles.optionItem, { borderBottomColor: colors.border }]} onPress={() => {
+                  <Pressable style={[styles.optionItem, { borderBottomColor: colors.border }]} onPress={() => {
                     setEditingMessageId(selectedMessage.id);
                     setInputText(selectedMessage.text);
                     setSelectedMessage(null);
                   }}>
                     <Ionicons name="pencil-outline" size={20} color={colors.textPrimary} style={styles.optionIcon} />
                     <Text style={[styles.optionText, { color: colors.textPrimary }]}>Edit Message</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                   
-                  <TouchableOpacity style={[styles.optionItem, { borderBottomWidth: 0 }]} onPress={handleDeleteMessage}>
+                  <Pressable style={[styles.optionItem, { borderBottomWidth: 0 }]} onPress={handleDeleteMessage}>
                     <Ionicons name="trash-outline" size={20} color="#D32F2F" style={styles.optionIcon} />
                     <Text style={[styles.optionText, { color: '#D32F2F' }]}>Delete</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </>
               )}
 

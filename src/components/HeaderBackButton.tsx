@@ -1,12 +1,12 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, StyleSheet } from 'react-native';
 import { theme } from '../theme/index';
 
 export default function HeaderBackButton({ onPress }: { onPress: () => void }) {
   return (
-    <TouchableOpacity onPress={onPress} style={styles.container} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+    <Pressable onPress={onPress} style={styles.container} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
       <Text style={styles.text}>Back</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 const styles = StyleSheet.create({

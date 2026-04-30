@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, BackHandler, LayoutAnimation, UIManager, Platform, TouchableOpacity, ActivityIndicator, Image, ScrollView, Alert, KeyboardAvoidingView, TextInput } from 'react-native';
+﻿import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, BackHandler, LayoutAnimation, UIManager, Platform, Pressable, ActivityIndicator, Image, ScrollView, Alert, KeyboardAvoidingView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -239,12 +239,12 @@ export default function HomeScreen({ navigation }: any) {
               <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Create Post</Text>
               
               <View style={[styles.toggleContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <TouchableOpacity style={[styles.toggleBtn, postType === 'general' && { backgroundColor: colors.primary }]} onPress={() => setPostType('general')}>
+                <Pressable style={[styles.toggleBtn, postType === 'general' && { backgroundColor: colors.primary }]} onPress={() => setPostType('general')}>
                   <Text style={[styles.toggleText, { color: postType === 'general' ? '#FFF' : colors.textPrimary }]}>General Post</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.toggleBtn, postType === 'adoption' && { backgroundColor: colors.primary }]} onPress={() => setPostType('adoption')}>
+                </Pressable>
+                <Pressable style={[styles.toggleBtn, postType === 'adoption' && { backgroundColor: colors.primary }]} onPress={() => setPostType('adoption')}>
                   <Text style={[styles.toggleText, { color: postType === 'adoption' ? '#FFF' : colors.textPrimary }]}>Adoption Listing</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
               
               {/* [UPLOAD-PROGRESS] adoption uses multi-image; general post keeps single picker */}
@@ -255,10 +255,10 @@ export default function HomeScreen({ navigation }: any) {
                       <UploadingImageTile key={it.uri} item={it} onRemove={() => petUploader.remove(it.uri)} onRetry={() => petUploader.retry(it.uri)} />
                     ))}
                     {petUploader.items.length < petUploader.MAX_IMAGES && (
-                      <TouchableOpacity onPress={petUploader.pick} style={[styles.addTile, { borderColor: colors.border }]}>
+                      <Pressable onPress={petUploader.pick} style={[styles.addTile, { borderColor: colors.border }]}>
                         <Ionicons name="add" size={32} color={colors.textSecondary} />
                         <Text style={{ color: colors.textSecondary, fontFamily: 'DMSans_400Regular', fontSize: 11, marginTop: 2 }}>Add photo</Text>
-                      </TouchableOpacity>
+                      </Pressable>
                     )}
                   </View>
                   <Text style={{ color: colors.textSecondary, fontFamily: 'DMSans_400Regular', fontSize: 12, marginTop: 4 }}>
@@ -266,9 +266,9 @@ export default function HomeScreen({ navigation }: any) {
                   </Text>
                 </View>
               ) : (
-                <TouchableOpacity style={[styles.imagePickerContainer, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={pickImage}>
+                <Pressable style={[styles.imagePickerContainer, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={pickImage}>
                   {selectedImage ? <Image source={{ uri: selectedImage }} style={styles.previewImage} /> : <View style={styles.imagePlaceholder}><Ionicons name="camera-outline" size={40} color={colors.textSecondary} /><Text style={[styles.subtitle, { color: colors.textSecondary, marginTop: 8 }]}>Tap to add a photo</Text></View>}
-                </TouchableOpacity>
+                </Pressable>
               )}
 
               {postType === 'general' && (
@@ -306,9 +306,9 @@ export default function HomeScreen({ navigation }: any) {
                           locationResults.map((loc, index) => {
                             const provName = loc.provinceCode ? provincesMap[loc.provinceCode] : 'Metro Manila';
                             return (
-                              <TouchableOpacity key={index} style={[styles.autocompleteItem, { borderBottomColor: colors.border }]} onPress={() => selectLocation(loc)}>
+                              <Pressable key={index} style={[styles.autocompleteItem, { borderBottomColor: colors.border }]} onPress={() => selectLocation(loc)}>
                                 <Text style={{ color: colors.textPrimary, fontFamily: 'DMSans_400Regular' }}>{loc.name}, {provName}</Text>
-                              </TouchableOpacity>
+                              </Pressable>
                             )
                           })
                         ) : (
@@ -340,13 +340,13 @@ export default function HomeScreen({ navigation }: any) {
                     {TAGS_LIST.map((tag) => {
                       const active = petForm.tags.includes(tag);
                       return (
-                        <TouchableOpacity
+                        <Pressable
                           key={tag}
                           onPress={() => setPetForm({ ...petForm, tags: active ? petForm.tags.filter(t => t !== tag) : [...petForm.tags, tag] })}
                           style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1, borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary : 'transparent', marginRight: 8, marginBottom: 8 }}
                         >
                           <Text style={{ color: active ? '#FFF' : colors.textPrimary, fontFamily: 'DMSans_700Bold', fontSize: 12 }}>{tag}</Text>
-                        </TouchableOpacity>
+                        </Pressable>
                       );
                     })}
                   </View>

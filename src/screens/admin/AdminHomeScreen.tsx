@@ -8,6 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import AdminBottomNavBar from '../../components/AdminBottomNavBar';
 import AdminDashboardScreen from './AdminDashboardScreen';
 import AdminAnnouncementsScreen from './AdminAnnouncementsScreen';
+import AdminMessagesScreen from './AdminMessagesScreen'; // [ADMIN-MESSAGES]
 import ProfileScreen from '../ProfileScreen';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -41,6 +42,7 @@ export default function AdminHomeScreen({ navigation }: any) {
         
         {activeTab === 'dashboard' && <AdminDashboardScreen />}
         {activeTab === 'announcements' && <AdminAnnouncementsScreen />}
+        {activeTab === 'messages' && <AdminMessagesScreen />}
         {activeTab === 'profile' && <ProfileScreen navigation={navigation} handleSignOut={handleSignOut} />}
 
       </View>

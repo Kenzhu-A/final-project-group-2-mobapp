@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Alert } from 'react-native';
+﻿import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Switch, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -49,10 +49,10 @@ export default function SettingsScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Settings</Text>
         <View style={{ width: 28 }} />
       </View>
@@ -61,21 +61,21 @@ export default function SettingsScreen({ navigation }: any) {
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Account Settings</Text>
 
         <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('EditProfile')}>
+          <Pressable style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('EditProfile')}>
             <View style={styles.menuLeft}>
               <Ionicons name="person-outline" size={22} color={colors.textPrimary} style={styles.menuIcon} />
               <Text style={[styles.menuText, { color: colors.textPrimary }]}>Edit Profile</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('ChangePassword')}>
+          <Pressable style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('ChangePassword')}>
             <View style={styles.menuLeft}>
               <Ionicons name="lock-closed-outline" size={22} color={colors.textPrimary} style={styles.menuIcon} />
               <Text style={[styles.menuText, { color: colors.textPrimary }]}>Change Password</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+          </Pressable>
 
           <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
             <View style={styles.menuLeft}>
@@ -95,9 +95,9 @@ export default function SettingsScreen({ navigation }: any) {
         </View>
 
         {/* DELETE ACCOUNT BUTTON */}
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
+        <Pressable style={styles.deleteButton} onPress={handleDeleteAccount}>
           <Text style={styles.deleteButtonText}>Delete Account</Text>
-        </TouchableOpacity>
+        </Pressable>
 
       </ScrollView>
     </SafeAreaView>

@@ -1,7 +1,7 @@
-// [PET-EDIT] full-record edit form prefilled from the existing pet
+﻿// [PET-EDIT] full-record edit form prefilled from the existing pet
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, Pressable,
   KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -88,15 +88,15 @@ export default function EditPetPostScreen({ route, navigation }: any) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Pressable onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Edit Post Details</Text>
-        <TouchableOpacity onPress={onSave} disabled={saving || uploader.anyUploading}>
+        <Pressable onPress={onSave} disabled={saving || uploader.anyUploading}>
           <Text style={{ color: colors.primary, fontFamily: 'DMSans_700Bold', fontSize: 15, opacity: (saving || uploader.anyUploading) ? 0.5 : 1 }}>
             Save
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
@@ -109,10 +109,10 @@ export default function EditPetPostScreen({ route, navigation }: any) {
               <UploadingImageTile key={it.uri} item={it} onRemove={() => uploader.remove(it.uri)} onRetry={() => uploader.retry(it.uri)} />
             ))}
             {uploader.items.length < uploader.MAX_IMAGES && (
-              <TouchableOpacity onPress={uploader.pick} style={[styles.addTile, { borderColor: colors.border }]}>
+              <Pressable onPress={uploader.pick} style={[styles.addTile, { borderColor: colors.border }]}>
                 <Ionicons name="add" size={32} color={colors.textSecondary} />
                 <Text style={{ color: colors.textSecondary, fontFamily: 'DMSans_400Regular', fontSize: 11, marginTop: 2 }}>Add</Text>
-              </TouchableOpacity>
+              </Pressable>
             )}
           </View>
 
@@ -147,13 +147,13 @@ export default function EditPetPostScreen({ route, navigation }: any) {
             {TAGS_LIST.map((tag) => {
               const active = form.tags.includes(tag);
               return (
-                <TouchableOpacity
+                <Pressable
                   key={tag}
                   onPress={() => setForm({ ...form, tags: active ? form.tags.filter((t) => t !== tag) : [...form.tags, tag] })}
                   style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1, borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary : 'transparent', marginRight: 8, marginBottom: 8 }}
                 >
                   <Text style={{ color: active ? '#FFF' : colors.textPrimary, fontFamily: 'DMSans_700Bold', fontSize: 12 }}>{tag}</Text>
-                </TouchableOpacity>
+                </Pressable>
               );
             })}
           </View>

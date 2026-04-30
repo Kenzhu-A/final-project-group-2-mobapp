@@ -1,6 +1,6 @@
-// [UPLOAD-PROGRESS] thumbnail with progress overlay, success state, retry on error
+﻿// [UPLOAD-PROGRESS] thumbnail with progress overlay, success state, retry on error
 import React from 'react';
-import { View, Image, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { UploadItem } from '../hooks/useImageUploader';
 import { useTheme } from '../context/ThemeContext';
@@ -26,16 +26,16 @@ export default function UploadingImageTile({ item, onRemove, onRetry }: Props) {
       )}
 
       {item.status === 'error' && (
-        <TouchableOpacity style={styles.errorOverlay} onPress={onRetry}>
+        <Pressable style={styles.errorOverlay} onPress={onRetry}>
           <Ionicons name="refresh" size={28} color="#FFF" />
           <Text style={styles.errorText}>Retry</Text>
-        </TouchableOpacity>
+        </Pressable>
       )}
 
       {item.status === 'done' && (
-        <TouchableOpacity style={styles.removeBtn} onPress={onRemove} hitSlop={8}>
+        <Pressable style={styles.removeBtn} onPress={onRemove} hitSlop={8}>
           <Ionicons name="close" size={14} color="#FFF" />
-        </TouchableOpacity>
+        </Pressable>
       )}
     </View>
   );

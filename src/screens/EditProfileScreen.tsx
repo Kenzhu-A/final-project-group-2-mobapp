@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+﻿import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -90,9 +90,9 @@ export default function EditProfileScreen({ navigation }: any) {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Edit Profile</Text>
         <View style={{ width: 28 }} />
       </View>
@@ -107,9 +107,9 @@ export default function EditProfileScreen({ navigation }: any) {
             ) : (
               <Image source={user?.avatar_url ? { uri: user.avatar_url } : require('../../assets/adaptive-icon.png')} style={[styles.avatarImage, { borderColor: colors.primary }]} />
             )}
-            <TouchableOpacity style={[styles.editBadge, { backgroundColor: colors.primary, borderColor: colors.surface }]} onPress={handleEditAvatar}>
+            <Pressable style={[styles.editBadge, { backgroundColor: colors.primary, borderColor: colors.surface }]} onPress={handleEditAvatar}>
               <Ionicons name="camera" size={16} color="#FFF" />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           <CustomInput label="Full Name" placeholder="Your Name" value={fullName} onChangeText={setFullName} />

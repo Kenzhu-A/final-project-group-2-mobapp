@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+﻿import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -30,9 +30,9 @@ export default function AddNewUsersMessages({ navigation }: any) {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
+        <Pressable onPress={() => navigation.goBack()} style={{ padding: 4 }}>
           <Ionicons name="close" size={28} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>New Message</Text>
         <View style={{ width: 32 }} />
       </View>
@@ -59,7 +59,7 @@ export default function AddNewUsersMessages({ navigation }: any) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
           renderItem={({ item }) => (
-            <TouchableOpacity 
+            <Pressable 
               style={[styles.userCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={() => navigation.replace('ChatScreen', { receiverId: item.id, receiverName: item.full_name || item.email, senderId: currentUserId })}
             >
@@ -70,7 +70,7 @@ export default function AddNewUsersMessages({ navigation }: any) {
                 <Text style={[styles.userName, { color: colors.textPrimary }]}>{item.full_name || 'User'}</Text>
                 <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{item.email}</Text>
               </View>
-            </TouchableOpacity>
+            </Pressable>
           )}
         />
       )}

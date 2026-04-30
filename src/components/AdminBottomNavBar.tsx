@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+﻿import React from 'react';
+import { View, Pressable, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
@@ -11,10 +11,9 @@ export default function AdminBottomNavBar({ activeTab, setActiveTab }: { activeT
   const renderIcon = (tab: string, iconName: any, label: string) => {
     const isActive = activeTab === tab;
     return (
-      <TouchableOpacity 
+      <Pressable 
         style={styles.navItem} 
         onPress={() => setActiveTab(tab)} 
-        activeOpacity={0.8}
       >
         <Ionicons 
           name={isActive ? iconName : `${iconName}-outline`} 
@@ -24,7 +23,7 @@ export default function AdminBottomNavBar({ activeTab, setActiveTab }: { activeT
         <Text style={[styles.navText, { color: isActive ? colors.primary : colors.textSecondary }]}>
           {label}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
@@ -33,11 +32,12 @@ export default function AdminBottomNavBar({ activeTab, setActiveTab }: { activeT
       styles.container, 
       { 
         backgroundColor: colors.surface,
-        bottom: Math.max(insets.bottom, 15) + 10, 
+        bottom: insets.bottom + 4, 
       } 
     ]}>
       {renderIcon('dashboard', 'grid', 'Dashboard')}
       {renderIcon('announcements', 'megaphone', 'Announce')}
+      {renderIcon('messages', 'chatbubbles', 'Messages')}
       {renderIcon('profile', 'person', 'Profile')}
     </View>
   );

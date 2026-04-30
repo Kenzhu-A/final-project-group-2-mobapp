@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
+﻿import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, Alert, Modal, TextInput, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../context/ThemeContext';
@@ -53,9 +53,9 @@ export default function AdminAnnouncementsScreen() {
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Announcements</Text>
-        <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={() => setIsModalVisible(true)}>
+        <Pressable style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={() => setIsModalVisible(true)}>
           <Ionicons name="add" size={24} color="#FFF" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {loading ? (
@@ -72,9 +72,9 @@ export default function AdminAnnouncementsScreen() {
                   <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{item.title}</Text>
                   <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{new Date(item.created_at).toLocaleDateString()}</Text>
                 </View>
-                <TouchableOpacity onPress={() => handleDelete(item.id)} style={{ padding: 4 }}>
+                <Pressable onPress={() => handleDelete(item.id)} style={{ padding: 4 }}>
                   <Ionicons name="trash-outline" size={20} color="#D32F2F" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
               <Text style={[styles.cardContent, { color: colors.textPrimary }]}>{item.content}</Text>
             </View>
@@ -86,7 +86,7 @@ export default function AdminAnnouncementsScreen() {
       <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
           <View style={[styles.modalHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-            <TouchableOpacity onPress={() => setIsModalVisible(false)}><Ionicons name="close" size={28} color={colors.textPrimary} /></TouchableOpacity>
+            <Pressable onPress={() => setIsModalVisible(false)}><Ionicons name="close" size={28} color={colors.textPrimary} /></Pressable>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>New Announcement</Text>
             <View style={{ width: 28 }} />
           </View>

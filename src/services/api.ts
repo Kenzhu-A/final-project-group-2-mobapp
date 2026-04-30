@@ -288,6 +288,40 @@ export const api = {
     const response = await fetch(`${BASE_URL}/lost-and-found/resolve/${reportId}`, { method: 'PUT' });
     if (!response.ok) throw new Error('Failed to resolve report');
   },
+
+  // [LOST-FOUND] edit an existing report
+  updateLostAndFoundReport: async (reportId: string, payload: any) => {
+    const response = await fetch(`${BASE_URL}/lost-and-found/${reportId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error('Failed to update report');
+    return await response.json();
+  },
+
+  // [ADMIN] user management
+  getAdminUsers: async () => {
+    const response = await fetch(`${BASE_URL}/admin/users`);
+    if (!response.ok) throw new Error('Failed to fetch users');
+    return await response.json();
+  },
+  deleteAdminUser: async (userId: string) => {
+    const response = await fetch(`${BASE_URL}/admin/users/${userId}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete user');
+  },
+
+  // [ADMIN] lost & found moderation
+  getAdminLostFoundReports: async () => {
+    const response = await fetch(`${BASE_URL}/admin/lost-and-found`);
+    if (!response.ok) throw new Error('Failed to fetch reports');
+    return await response.json();
+  },
+  deleteAdminLostFoundReport: async (id: string) => {
+    const response = await fetch(`${BASE_URL}/admin/lost-and-found/${id}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete report');
+  },
+
   getConversations: async (userId: string) => {
     const response = await fetch(`${BASE_URL}/messages/conversations/${userId}`);
     if (!response.ok) throw new Error('Failed to fetch conversations');

@@ -1,6 +1,6 @@
-// [DASHBOARD-REDESIGN] grid card used by Dashboard + Saved + LikedPetsAndPostsScreen
+﻿// [DASHBOARD-REDESIGN] grid card used by Dashboard + Saved + LikedPetsAndPostsScreen
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
@@ -58,7 +58,7 @@ export default function PetCard({ pet, onPress }: Props) {
   const genderColor = pet.gender === 'male' ? '#3B82F6' : '#EC4899';
 
   return (
-    <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <Pressable onPress={onPress} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.imageWrap}>
         {pet.image_url ? (
           <Image source={{ uri: pet.image_url }} style={styles.image} />
@@ -96,7 +96,7 @@ export default function PetCard({ pet, onPress }: Props) {
           )}
         </View>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

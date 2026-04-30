@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+﻿import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -60,10 +60,10 @@ export default function MyPetsScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>My Pets</Text>
       </View>
 
@@ -100,18 +100,18 @@ export default function MyPetsScreen({ navigation }: any) {
               </View>
 
               <View style={styles.actionColumn}>
-                <TouchableOpacity 
+                <Pressable 
                   style={[styles.toggleBtn, { borderColor: item.status === 'available' ? colors.border : colors.primary, backgroundColor: item.status === 'available' ? colors.background : colors.primary + '15' }]} 
                   onPress={() => toggleStatus(item)}
                 >
                   <Text style={[styles.toggleBtnText, { color: item.status === 'available' ? colors.textPrimary : colors.primary }]}>
                     {item.status === 'available' ? 'Mark Adopted' : 'Mark Available'}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
 
-                <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDeletePet(item.id)}>
+                <Pressable style={styles.deleteBtn} onPress={() => handleDeletePet(item.id)}>
                   <Ionicons name="trash-outline" size={20} color="#D32F2F" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
           )}

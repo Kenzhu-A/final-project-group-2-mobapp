@@ -1,6 +1,6 @@
 // [HERO-CAROUSEL] swipeable auto-cycling card: Featured Today <-> Lost & Found (60-second interval)
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import FeaturedPetCard from './FeaturedPetCard';
@@ -69,10 +69,9 @@ export default function HeroCarousel({ featuredPet, onPressFeatured, onSayHi, on
         )}
 
         {/* Slide 2 — Lost & Found */}
-        <TouchableOpacity
+        <Pressable
           style={[styles.slide, styles.lfCard, { width: SCREEN_W - 40, backgroundColor: colors.primary }]}
           onPress={onPressLostFound}
-          activeOpacity={0.9}
         >
           <View style={styles.lfRow}>
             <Ionicons name="search-circle" size={36} color="#FFF" />
@@ -84,7 +83,7 @@ export default function HeroCarousel({ featuredPet, onPressFeatured, onSayHi, on
           <View style={styles.lfBtn}>
             <Text style={styles.lfBtnText}>View reports →</Text>
           </View>
-        </TouchableOpacity>
+        </Pressable>
       </ScrollView>
 
       {/* page dots */}

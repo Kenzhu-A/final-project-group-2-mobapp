@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+﻿import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
@@ -8,7 +8,7 @@ import { api } from '../../services/api';
 export default function AdminDashboardScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<any>(); // Hook to allow nested navigation
-  const [stats, setStats] = useState({ users: 0, activePets: 0, successfulAdoptions: 0 });
+  const [stats, setStats] = useState({ users: 0, activePets: 0, successfulAdoptions: 0, activeReports: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,10 +30,10 @@ export default function AdminDashboardScreen() {
       
       <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Dashboard</Text>
 
-      {/* --- STATS GRID --- */}
+      {/* --- STATS GRID 2×2 --- */}
       <View style={styles.statsGrid}>
         <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={[styles.iconWrapper, { backgroundColor: colors.primary + '15' }]}>
+          <View style={[styles.iconWrapper, { backgroundColor: colors.primary + '18' }]}>
             <Ionicons name="people" size={24} color={colors.primary} />
           </View>
           <Text style={[styles.statNumber, { color: colors.textPrimary }]}>{stats.users}</Text>
@@ -41,19 +41,27 @@ export default function AdminDashboardScreen() {
         </View>
 
         <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={[styles.iconWrapper, { backgroundColor: '#4CAF5015' }]}>
-            <Ionicons name="paw" size={24} color="#4CAF50" />
+          <View style={[styles.iconWrapper, { backgroundColor: colors.accent + '18' }]}>
+            <Ionicons name="paw" size={24} color={colors.accent} />
           </View>
           <Text style={[styles.statNumber, { color: colors.textPrimary }]}>{stats.activePets}</Text>
           <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Pets</Text>
         </View>
 
         <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={[styles.iconWrapper, { backgroundColor: '#9C27B015' }]}>
-            <Ionicons name="heart" size={24} color="#9C27B0" />
+          <View style={[styles.iconWrapper, { backgroundColor: '#63992218' }]}>
+            <Ionicons name="heart" size={24} color="#639922" />
           </View>
           <Text style={[styles.statNumber, { color: colors.textPrimary }]}>{stats.successfulAdoptions}</Text>
           <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Adoptions</Text>
+        </View>
+
+        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.iconWrapper, { backgroundColor: '#A32D2D18' }]}>
+            <Ionicons name="search-circle" size={24} color="#A32D2D" />
+          </View>
+          <Text style={[styles.statNumber, { color: colors.textPrimary }]}>{stats.activeReports}</Text>
+          <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Active Reports</Text>
         </View>
       </View>
 
@@ -62,7 +70,7 @@ export default function AdminDashboardScreen() {
       {/* --- QUICK ACTION MENU --- */}
       <View style={{ gap: 12 }}>
         
-        <TouchableOpacity 
+        <Pressable 
           style={[styles.menuRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => navigation.navigate('AdminPostsScreen')}
         >
@@ -74,9 +82,9 @@ export default function AdminDashboardScreen() {
             <Text style={[styles.menuDesc, { color: colors.textSecondary }]}>Review and delete community feed posts</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity 
+        <Pressable
           style={[styles.menuRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => navigation.navigate('AdminLogsScreen')}
         >
@@ -88,7 +96,35 @@ export default function AdminDashboardScreen() {
             <Text style={[styles.menuDesc, { color: colors.textSecondary }]}>Monitor system and user actions</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </Pressable>
+
+        <Pressable
+          style={[styles.menuRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={() => navigation.navigate('AdminUsersScreen')}
+        >
+          <View style={[styles.menuIcon, { backgroundColor: '#3B82F615' }]}>
+            <Ionicons name="people" size={22} color="#3B82F6" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>Manage Users</Text>
+            <Text style={[styles.menuDesc, { color: colors.textSecondary }]}>View and remove user accounts</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+        </Pressable>
+
+        <Pressable
+          style={[styles.menuRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={() => navigation.navigate('AdminLostFoundModerationScreen')}
+        >
+          <View style={[styles.menuIcon, { backgroundColor: '#4CAF5015' }]}>
+            <Ionicons name="search-circle" size={22} color="#4CAF50" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>Lost & Found Reports</Text>
+            <Text style={[styles.menuDesc, { color: colors.textSecondary }]}>Review and remove inappropriate reports</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+        </Pressable>
 
         {/* System Health Status Banner */}
         <View style={[styles.actionBanner, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: 12 }]}>

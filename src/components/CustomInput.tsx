@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TextInputProps, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TextInputProps, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
@@ -36,7 +36,7 @@ export default function CustomInput({ label, error, isPassword, ...props }: Prop
         />
         
         {isPassword && (
-          <TouchableOpacity 
+          <Pressable 
             style={styles.eyeIconContainer}
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -46,7 +46,7 @@ export default function CustomInput({ label, error, isPassword, ...props }: Prop
               size={20} 
               color={colors.textSecondary} 
             />
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}

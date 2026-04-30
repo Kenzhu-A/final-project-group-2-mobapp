@@ -1,7 +1,7 @@
-// [DASHBOARD-REDESIGN] enriched pet detail — carousel, pills, save heart, like, share, apply-to-adopt
+﻿// [DASHBOARD-REDESIGN] enriched pet detail — carousel, pills, save heart, like, share, apply-to-adopt
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, Image, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, Image, ScrollView, Pressable,
   ActivityIndicator, FlatList, Dimensions, Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -98,7 +98,7 @@ export default function PetDetailsScreen({ route, navigation }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 0 }}>
 
         {/* image carousel */}
         <View style={styles.imageWrap}>
@@ -118,21 +118,21 @@ export default function PetDetailsScreen({ route, navigation }: any) {
             </View>
           )}
 
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="chevron-back" size={26} color="#000" />
-          </TouchableOpacity>
+          </Pressable>
 
           {/* [DASHBOARD-REDESIGN] share + save + like icons */}
           <View style={styles.topRightActions}>
-            <TouchableOpacity style={styles.iconCircle} onPress={onShare}>
+            <Pressable style={styles.iconCircle} onPress={onShare}>
               <Ionicons name="share-outline" size={20} color="#000" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconCircle} onPress={onToggleLike}>
+            </Pressable>
+            <Pressable style={styles.iconCircle} onPress={onToggleLike}>
               <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={20} color={isLiked ? '#EF4444' : '#000'} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconCircle} onPress={onToggleSave}>
+            </Pressable>
+            <Pressable style={styles.iconCircle} onPress={onToggleSave}>
               <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={20} color={isSaved ? '#FBBF24' : '#000'} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {images.length > 1 && (
@@ -205,11 +205,11 @@ export default function PetDetailsScreen({ route, navigation }: any) {
             {pet.description || 'No description provided.'}
           </Text>
           {(pet.description || '').length > 200 && (
-            <TouchableOpacity onPress={() => setReadMore((v) => !v)}>
+            <Pressable onPress={() => setReadMore((v) => !v)}>
               <Text style={{ color: colors.primary, fontFamily: 'DMSans_700Bold', marginTop: 4 }}>
                 {readMore ? 'Read less' : 'Read more'}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
 
           {/* personality / tags */}
@@ -243,10 +243,9 @@ export default function PetDetailsScreen({ route, navigation }: any) {
 
           {/* owner info — tappable → ViewUserProfileScreen [DASHBOARD-REDESIGN] */}
           <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 20 }]}>Listed By</Text>
-          <TouchableOpacity
+          <Pressable
             style={[styles.ownerCard, { backgroundColor: colors.background, borderColor: colors.border }]}
             onPress={() => pet.owner_id && navigation.navigate('ViewUserProfileScreen', { userId: pet.owner_id })}
-            activeOpacity={0.8}
           >
             <Image
               source={pet.owner?.avatar_url ? { uri: pet.owner.avatar_url } : require('../../assets/adaptive-icon.png')}
@@ -257,7 +256,7 @@ export default function PetDetailsScreen({ route, navigation }: any) {
               <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'DMSans_400Regular' }}>Pet Owner · Tap to view profile</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+          </Pressable>
 
           {/* fee + apply/manage */}
           <View style={styles.feeRow}>
@@ -268,18 +267,18 @@ export default function PetDetailsScreen({ route, navigation }: any) {
               </Text>
             </View>
             {!isOwner ? (
-              <TouchableOpacity style={[styles.applyBtn, { backgroundColor: colors.accent }]} onPress={onApply}>
+              <Pressable style={[styles.applyBtn, { backgroundColor: colors.accent }]} onPress={onApply}>
                 <Text style={styles.applyText}>Apply to adopt</Text>
                 <Ionicons name="chevron-forward" size={18} color="#FFF" />
-              </TouchableOpacity>
+              </Pressable>
             ) : (
-              <TouchableOpacity
+              <Pressable
                 style={[styles.applyBtn, { backgroundColor: colors.primary }]}
                 onPress={() => navigation.navigate('EditPetPostScreen', { pet })}
               >
                 <Text style={styles.applyText}>Manage listing</Text>
                 <Ionicons name="chevron-forward" size={18} color="#FFF" />
-              </TouchableOpacity>
+              </Pressable>
             )}
           </View>
         </View>
@@ -317,7 +316,7 @@ const styles = StyleSheet.create({
   ownerCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1 },
   ownerAvatar: { width: 50, height: 50, borderRadius: 25, marginRight: 14 },
   ownerName: { fontSize: 15, fontFamily: 'DMSans_700Bold', marginBottom: 2 },
-  feeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 24 },
+  feeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
   feeLabel: { fontSize: 11, fontFamily: 'DMSans_700Bold', letterSpacing: 1 },
   feeValue: { fontSize: 24, fontFamily: 'DMSans_700Bold', marginTop: 2 },
   applyBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 24, gap: 4 },

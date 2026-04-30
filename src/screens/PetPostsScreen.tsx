@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image, RefreshControl } from 'react-native';
+﻿import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, Image, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -87,9 +87,9 @@ export default function PetPostsScreen({ navigation }: any) {
                 </Text>
               </View>
               
-              <TouchableOpacity>
+              <Pressable>
                 <Ionicons name="bookmark-outline" size={24} color={colors.primary} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
           )}
         />

@@ -1,6 +1,6 @@
-// [DELETE-CONFIRM] re-enter email confirmation before irreversible delete
+﻿// [DELETE-CONFIRM] re-enter email confirmation before irreversible delete
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -39,9 +39,9 @@ export default function DeletePetPostScreen({ route, navigation }: any) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Pressable onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <View style={styles.body}>
@@ -82,7 +82,7 @@ export default function DeletePetPostScreen({ route, navigation }: any) {
           All inquiries, saved interactions, and messages related to this post will be deleted. This listing will no longer be visible and cannot be restored.
         </Text>
 
-        <TouchableOpacity
+        <Pressable
           style={[styles.deleteBtn, { backgroundColor: matches ? '#B23A3A' : colors.border }]}
           onPress={onDelete}
           disabled={!matches || deleting}
@@ -90,11 +90,11 @@ export default function DeletePetPostScreen({ route, navigation }: any) {
           <Text style={[styles.deleteBtnText, { color: matches ? '#FFF' : colors.textSecondary }]}>
             {deleting ? 'Deleting…' : 'Delete'}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => navigation.goBack()}>
+        <Pressable style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => navigation.goBack()}>
           <Text style={[styles.cancelBtnText, { color: colors.textPrimary }]}>Go Back</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </SafeAreaView>
   );

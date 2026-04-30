@@ -1,6 +1,6 @@
-// [SAVED-PETS] confirmation sheet for unsaving a pet — rendered once globally via SavedPetsProvider
+﻿// [SAVED-PETS] confirmation sheet for unsaving a pet — rendered once globally via SavedPetsProvider
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Image, Pressable } from 'react-native';
+import { Modal, View, Text, Pressable, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
@@ -41,12 +41,12 @@ export default function RemoveSavedSheet({ visible, pet, onConfirm, onDismiss }:
             </View>
           </View>
 
-          <TouchableOpacity style={styles.removeBtn} onPress={onConfirm} accessibilityRole="button">
+          <Pressable style={styles.removeBtn} onPress={onConfirm} accessibilityRole="button">
             <Text style={styles.removeBtnText}>Remove from saved</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.keepBtn, { borderColor: colors.border }]} onPress={onDismiss} accessibilityRole="button">
+          </Pressable>
+          <Pressable style={[styles.keepBtn, { borderColor: colors.border }]} onPress={onDismiss} accessibilityRole="button">
             <Text style={[styles.keepBtnText, { color: colors.textPrimary }]}>Keep saved</Text>
-          </TouchableOpacity>
+          </Pressable>
         </Pressable>
       </Pressable>
     </Modal>
