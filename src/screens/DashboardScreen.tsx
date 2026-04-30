@@ -11,6 +11,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { api } from '../services/api';
+import { pushLocalNotification } from './ChatNotificationsScreen'; // [ANNOUNCEMENTS]
 import PetCard from '../components/PetCard';
 import HeroCarousel from '../components/HeroCarousel';
 import GeneralPostCard from '../components/GeneralPostCard'; // [COMMUNITY-FEED]
@@ -90,14 +91,38 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
       setPets(petList || []);
       setCommunityPosts(postList || []);
       if (userId) {
+        try { setProfile(await api.getUserProfile(userId)); } catch {}
+
+        // [ANNOUNCEMENTS] check for announcements newer than last seen and push to local notifs
         try {
-          setProfile(await api.getUserProfile(userId));
+          const lastSeenKey = `${userId}_last_announcement_seen`;
+          const lastSeen = await AsyncStorage.getItem(lastSeenKey);
+          if (!lastSeen) {
+            // first open — set baseline so we don't flood old announcements
+            await AsyncStorage.setItem(lastSeenKey, new Date().toISOString());
+          } else {
+            const anns = await api.getAnnouncements();
+            const lastSeenTime = new Date(lastSeen);
+            const newOnes = (anns || []).filter(
+              (a: any) => new Date(a.created_at) > lastSeenTime,
+            );
+            for (const ann of newOnes) {
+              await pushLocalNotification(
+                { title: ann.title, desc: ann.content, time: ann.created_at, icon: 'megaphone-outline' },
+                `announcement_${ann.id}`,
+              );
+            }
+            if (newOnes.length > 0) {
+              await AsyncStorage.setItem(lastSeenKey, new Date().toISOString());
+            }
+          }
         } catch {}
-        // [PUSH-NOTIF] badge = unread notification count from AsyncStorage
+
+        // [PUSH-NOTIF] badge = unread count — read AFTER announcement writes so badge is current
         try {
           const raw = await AsyncStorage.getItem('snoutscout_notifications');
           const notifs: any[] = raw ? JSON.parse(raw) : [];
-          setNotifCount(notifs.filter((n) => !n.read).length);
+          setNotifCount(notifs.filter((n: any) => !n.read).length);
         } catch {}
       }
     } catch (e) {
@@ -179,10 +204,12 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
     [pets]
   );
 
-  const handleSayHi = (pet: any) => {
+  const handleSayHi = async (pet: any) => {
+    const userId = await AsyncStorage.getItem('userId');
     navigation.navigate('ChatScreen', {
       receiverId: pet.owner_id,
       receiverName: pet.owner?.full_name || 'Pet Owner',
+      senderId: userId,
       initialMessage: `Hi! I'm interested in adopting ${pet.pet_name}. 🐾`,
     });
   };

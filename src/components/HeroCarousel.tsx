@@ -7,7 +7,7 @@ import FeaturedPetCard from './FeaturedPetCard';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_H = 140; // fixed height so both slides are identical
-const INTERVAL_MS = 60_000; // 1 minute
+const INTERVAL_MS = 40_000; // 40 seconds
 
 interface Props {
   featuredPet: any | null;

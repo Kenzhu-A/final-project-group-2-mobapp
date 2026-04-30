@@ -186,14 +186,14 @@ export default function PetDetailsScreen({ route, navigation }: any) {
             <View style={[styles.pill, { backgroundColor: colors.background, borderColor: colors.border }]}>
               <Ionicons name="calendar" size={16} color={colors.primary} />
               <Text style={[styles.pillLabel, { color: colors.textSecondary }]}>AGE</Text>
-              <Text style={[styles.pillValue, { color: colors.textPrimary }]}>{pet.age} yr</Text>
+              <Text style={[styles.pillValue, { color: colors.textPrimary }]}>{pet.age}</Text>
             </View>
-            {pet.gender && pet.gender !== 'unknown' && (
+            {pet.gender && (
               <View style={[styles.pill, { backgroundColor: colors.background, borderColor: colors.border }]}>
                 <Ionicons name="male-female" size={16} color={colors.primary} />
                 <Text style={[styles.pillLabel, { color: colors.textSecondary }]}>SEX</Text>
                 <Text style={[styles.pillValue, { color: colors.textPrimary }]}>
-                  {pet.gender === 'male' ? 'Male' : 'Female'}
+                  {pet.gender === 'male' ? 'Male' : pet.gender === 'female' ? 'Female' : 'Unknown'}
                 </Text>
               </View>
             )}
