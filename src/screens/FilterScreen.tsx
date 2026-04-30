@@ -1,6 +1,6 @@
 ﻿// [DASHBOARD-REDESIGN] full-screen filter with persistence (replaces bottom-sheet design)
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
@@ -41,6 +41,59 @@ export default function FilterScreen({ route, navigation }: any) {
   const [size, setSize] = useState<string[]>(initial.size ?? []);
   const [maxPrice, setMaxPrice] = useState<number>(initial.maxPrice ?? 50000);
   const [city, setCity] = useState<string>(initial.city ?? '');
+  const [locationQuery, setLocationQuery] = useState(initial.city ?? '');
+  const [locationResults, setLocationResults] = useState<any[]>([]);
+  const [isFetchingLocations, setIsFetchingLocations] = useState(false);
+  const [showLocationList, setShowLocationList] = useState(false);
+  const [provincesMap, setProvincesMap] = useState<Record<string, string>>({});
+
+  // Fetch provinces on mount
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      try {
+        const res = await fetch('https://psgc.gitlab.io/api/provinces/');
+        const data = await res.json();
+        const map: Record<string, string> = {};
+        data.forEach((p: any) => { map[p.code] = p.name; });
+        setProvincesMap(map);
+      } catch (e) {
+        console.error("Failed to fetch provinces", e);
+      }
+    };
+    if (Object.keys(provincesMap).length === 0) {
+      fetchProvinces();
+    }
+  }, []);
+
+  const fetchLocations = async (query: string) => {
+    setLocationQuery(query);
+    if (query.length < 3) {
+      setLocationResults([]);
+      setShowLocationList(false);
+      return;
+    }
+    
+    setIsFetchingLocations(true);
+    setShowLocationList(true);
+    try {
+      const response = await fetch(`https://psgc.gitlab.io/api/cities-municipalities/`);
+      const data = await response.json();
+      const filtered = data.filter((loc: any) => loc.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5); 
+      setLocationResults(filtered);
+    } catch (error) {
+      console.error("Location fetch failed", error);
+    } finally {
+      setIsFetchingLocations(false);
+    }
+  };
+
+  const selectLocation = (loc: any) => {
+    const provinceName = loc.provinceCode ? provincesMap[loc.provinceCode] : 'Metro Manila';
+    const fullName = `${loc.name}, ${provinceName}`;
+    setCity(fullName);
+    setLocationQuery(fullName);
+    setShowLocationList(false);
+  };
 
   const toggle = (arr: string[], v: string, setter: (n: string[]) => void) => {
     setter(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
@@ -72,7 +125,13 @@ export default function FilterScreen({ route, navigation }: any) {
   }, [allPets, species, ageBucket, size, maxPrice, city]);
 
   const reset = () => {
-    setSpecies([]); setAgeBucket(''); setSize([]); setMaxPrice(50000); setCity('');
+    setSpecies([]); 
+    setAgeBucket(''); 
+    setSize([]); 
+    setMaxPrice(50000); 
+    setCity('');
+    setLocationQuery('');
+    setShowLocationList(false);
   };
 
   const apply = () => {
@@ -152,13 +211,33 @@ export default function FilterScreen({ route, navigation }: any) {
         />
 
         <Text style={[styles.section, { color: colors.textPrimary }]}>City</Text>
-        <TextInput
-          value={city}
-          onChangeText={setCity}
-          placeholder="e.g. Quezon City"
-          placeholderTextColor={colors.textSecondary}
-          style={[styles.cityInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface }]}
-        />
+        <View style={styles.autocompleteContainer}>
+          <TextInput
+            value={locationQuery}
+            onChangeText={fetchLocations}
+            placeholder="Start typing a Philippine city..."
+            placeholderTextColor={colors.textSecondary}
+            style={[styles.cityInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface }]}
+          />
+          {showLocationList && (
+            <View style={[styles.autocompleteList, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              {isFetchingLocations ? (
+                <ActivityIndicator style={{ padding: 10 }} color={colors.primary} />
+              ) : locationResults.length > 0 ? (
+                locationResults.map((loc, index) => {
+                  const provName = loc.provinceCode ? provincesMap[loc.provinceCode] : 'Metro Manila';
+                  return (
+                    <Pressable key={index} style={[styles.autocompleteItem, { borderBottomColor: colors.border }]} onPress={() => selectLocation(loc)}>
+                      <Text style={{ color: colors.textPrimary, fontFamily: 'DMSans_400Regular' }}>{loc.name}, {provName}</Text>
+                    </Pressable>
+                  )
+                })
+              ) : (
+                <Text style={{ padding: 10, color: colors.textSecondary }}>No cities found</Text>
+              )}
+            </View>
+          )}
+        </View>
       </ScrollView>
 
       <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
@@ -178,7 +257,10 @@ const styles = StyleSheet.create({
   section: { fontSize: 16, fontFamily: 'DMSans_700Bold', marginTop: 20, marginBottom: 12 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  autocompleteContainer: { marginBottom: 16, position: 'relative', zIndex: 10 },
   cityInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontFamily: 'DMSans_400Regular', fontSize: 14 },
+  autocompleteList: { position: 'absolute', top: 50, left: 0, right: 0, borderWidth: 1, borderRadius: 12, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, zIndex: 100, maxHeight: 200 },
+  autocompleteItem: { padding: 12, borderBottomWidth: 1 },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, borderTopWidth: 1 },
   applyBtn: { padding: 16, borderRadius: 28, alignItems: 'center' },
   applyText: { color: '#FFF', fontSize: 16, fontFamily: 'DMSans_700Bold' },

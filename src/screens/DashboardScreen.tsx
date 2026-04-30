@@ -108,7 +108,7 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
             );
             for (const ann of newOnes) {
               await pushLocalNotification(
-                { title: ann.title, desc: ann.content, time: ann.created_at, icon: 'megaphone-outline' },
+                { title: ann.title, desc: ann.content, time: ann.created_at, icon: 'megaphone-outline', type: 'announcement', source: 'Administrator' },
                 `announcement_${ann.id}`,
               );
             }

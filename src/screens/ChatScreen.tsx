@@ -1,6 +1,7 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TextInput, Pressable, FlatList, StyleSheet, KeyboardAvoidingView, Platform, Alert, Modal, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { io, Socket } from 'socket.io-client';
 import * as Clipboard from 'expo-clipboard';
@@ -34,61 +35,85 @@ export default function ChatScreen({ route, navigation }: any) {
     });
   };
 
+  const setupSocketConnection = useCallback(async () => {
+    try {
+      const currentSenderId = routeSenderId || (await AsyncStorage.getItem('userId'));
+      setSenderId(currentSenderId);
+      if (!currentSenderId) return;
+
+      // Fetch message history
+      const history = await api.getMessages(currentSenderId, receiverId);
+      setMessages(history);
+      
+      // Mark conversation as read
+      const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
+      const readMap = readRaw ? JSON.parse(readRaw) : {};
+      readMap[receiverId] = new Date().toISOString();
+      await AsyncStorage.setItem(CHAT_READ_KEY, JSON.stringify(readMap));
+
+      // Disconnect existing socket if any
+      socketRef.current?.disconnect();
+
+      // Create new socket connection
+      socketRef.current = io(SOCKET_URL);
+      socketRef.current.emit('register', currentSenderId);
+      
+      // Set up event listeners
+      socketRef.current.on('receive_message', (newMessage) => {
+        setMessages((prev) => {
+          if (prev.some(msg => msg.id === newMessage.id)) return prev;
+          return [...prev, newMessage];
+        });
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      });
+      
+      socketRef.current.on('message_edited', (updatedMessage) => {
+        setMessages((prev) => prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m)));
+      });
+      
+      socketRef.current.on('message_deleted', ({ messageId }) => {
+        setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      });
+      
+      socketRef.current.on('conversation_deleted', ({ user1, user2, deletedBy }) => {
+        const isCurrentConversation =
+          (user1 === currentSenderId && user2 === receiverId) || (user1 === receiverId && user2 === currentSenderId);
+        if (!isCurrentConversation) return;
+        setMessages([]);
+        if (deletedBy && deletedBy !== currentSenderId) {
+          Alert.alert('Conversation removed', 'This conversation was deleted.');
+        }
+        safeExitChatToMessages();
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }, [routeSenderId, receiverId]);
+
+  // Set up socket connection when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      setupSocketConnection();
+
+      return () => {
+        // Keep socket connected (don't disconnect on blur)
+        // This allows messages to be received even when not actively viewing the screen
+      };
+    }, [setupSocketConnection])
+  );
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      socketRef.current?.disconnect();
+    };
+  }, []);
+
   const formatMessageTime = (iso?: string) => {
     if (!iso) return '';
     const d = new Date(iso);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
-
-  useEffect(() => {
-    const bootChat = async () => {
-      try {
-        const currentSenderId = routeSenderId || (await AsyncStorage.getItem('userId'));
-        setSenderId(currentSenderId);
-        if (!currentSenderId) return;
-
-        const history = await api.getMessages(currentSenderId, receiverId);
-        setMessages(history);
-        const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
-        const readMap = readRaw ? JSON.parse(readRaw) : {};
-        readMap[receiverId] = new Date().toISOString();
-        await AsyncStorage.setItem(CHAT_READ_KEY, JSON.stringify(readMap));
-
-        socketRef.current = io(SOCKET_URL);
-        socketRef.current.emit('register', currentSenderId);
-        socketRef.current.on('receive_message', (newMessage) => {
-          setMessages((prev) => {
-            if (prev.some(msg => msg.id === newMessage.id)) return prev;
-            return [...prev, newMessage];
-          });
-          setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-        });
-        socketRef.current.on('message_edited', (updatedMessage) => {
-          setMessages((prev) => prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m)));
-        });
-        socketRef.current.on('message_deleted', ({ messageId }) => {
-          setMessages((prev) => prev.filter((m) => m.id !== messageId));
-        });
-        socketRef.current.on('conversation_deleted', ({ user1, user2, deletedBy }) => {
-          const isCurrentConversation =
-            (user1 === currentSenderId && user2 === receiverId) || (user1 === receiverId && user2 === currentSenderId);
-          if (!isCurrentConversation) return;
-          setMessages([]);
-          if (deletedBy && deletedBy !== currentSenderId) {
-            Alert.alert('Conversation removed', 'This conversation was deleted.');
-          }
-          safeExitChatToMessages();
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    bootChat();
-
-    return () => {
-      socketRef.current?.disconnect();
-    };
-  }, []);
 
   const sendMessage = async () => {
     if (!senderId) return;
