@@ -13,8 +13,6 @@ import CustomInput from '../components/CustomInput';
 import CustomDropdown from '../components/CustomDropdown';
 import PrimaryButton from '../components/PrimaryButton';
 
-const CATEGORIES = ['Dog', 'Cat', 'Bird', 'Other'];
-
 export default function LostAndFoundScreen({ navigation }: any) {
   const { colors } = useTheme();
   
@@ -40,6 +38,8 @@ export default function LostAndFoundScreen({ navigation }: any) {
     contact: ''
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  // [OTHER-CATEGORY] free-text when "Other" is selected as pet category
+  const [otherCategoryText, setOtherCategoryText] = useState('');
 
   const fetchReports = useCallback(async () => {
     try {
@@ -61,17 +61,22 @@ export default function LostAndFoundScreen({ navigation }: any) {
 
   const filteredReports = reports.filter(r => filterType === 'All' || r.report_type === filterType);
 
+  const CATEGORY_OPTIONS = ['Dog', 'Cat', 'Bird', 'Other'];
+
   // [LOST-FOUND] open modal pre-filled for editing
   const openEdit = (item: any) => {
     setEditTarget(item);
+    const isStandard = CATEGORY_OPTIONS.includes(item.pet_category);
     setForm({
       reportType: item.report_type,
-      petCategory: item.pet_category,
+      petCategory: isStandard ? item.pet_category : 'Other',
       petName: item.pet_name || '',
       description: item.description || '',
       location: item.location || '',
       contact: item.contact_info || '',
     });
+    // [OTHER-CATEGORY] restore free-text if it was a custom category
+    setOtherCategoryText(isStandard ? '' : (item.pet_category || ''));
     setSelectedImage(item.image_url || null);
     setIsModalVisible(true);
   };
@@ -79,15 +84,44 @@ export default function LostAndFoundScreen({ navigation }: any) {
   const openCreate = () => {
     setEditTarget(null);
     setForm({ reportType: 'Lost', petCategory: 'Dog', petName: '', description: '', location: '', contact: '' });
+    setOtherCategoryText('');
     setSelectedImage(null);
     setIsModalVisible(true);
   };
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'], allowsEditing: true, aspect: [4, 5], quality: 0.8,
-    });
-    if (!result.canceled) setSelectedImage(result.assets[0].uri);
+  // [LOST-FOUND] offer camera or gallery when tapping the image picker
+  const pickImage = () => {
+    Alert.alert('Add Photo', 'Choose how you want to add a photo.', [
+      {
+        text: 'Take Photo',
+        onPress: async () => {
+          const { granted } = await ImagePicker.requestCameraPermissionsAsync();
+          if (!granted) {
+            Alert.alert('Permission Required', 'Camera access is needed to take a photo.');
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'], allowsEditing: true, aspect: [4, 5], quality: 0.8,
+          });
+          if (!result.canceled) setSelectedImage(result.assets[0].uri);
+        },
+      },
+      {
+        text: 'Choose from Library',
+        onPress: async () => {
+          const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!granted) {
+            Alert.alert('Permission Required', 'Photo library access is needed to pick an image.');
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'], allowsEditing: true, aspect: [4, 5], quality: 0.8,
+          });
+          if (!result.canceled) setSelectedImage(result.assets[0].uri);
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const handleSubmit = async () => {
@@ -112,9 +146,17 @@ export default function LostAndFoundScreen({ navigation }: any) {
         imageUrl = await api.uploadLostAndFoundImage(formData);
       }
 
+      // [OTHER-CATEGORY] resolve actual category before submitting
+      const resolvedCategory = form.petCategory === 'Other' ? otherCategoryText.trim() : form.petCategory;
+      if (!resolvedCategory) {
+        Alert.alert('Missing Details', 'Please specify the pet type when selecting "Other".');
+        setIsSubmitting(false);
+        return;
+      }
+
       const payload = {
         report_type: form.reportType,
-        pet_category: form.petCategory,
+        pet_category: resolvedCategory,
         pet_name: form.petName,
         description: form.description,
         location: form.location,
@@ -137,6 +179,7 @@ export default function LostAndFoundScreen({ navigation }: any) {
       setIsModalVisible(false);
       setEditTarget(null);
       setForm({ reportType: 'Lost', petCategory: 'Dog', petName: '', description: '', location: '', contact: '' });
+      setOtherCategoryText(''); // [OTHER-CATEGORY]
       setSelectedImage(null);
     } catch (e: any) { Alert.alert('Error', e.message); }
     finally { setIsSubmitting(false); }
@@ -324,7 +367,11 @@ export default function LostAndFoundScreen({ navigation }: any) {
                 {selectedImage ? <Image source={{ uri: selectedImage }} style={styles.previewImage} /> : <View style={styles.imagePlaceholder}><Ionicons name="camera-outline" size={40} color={colors.textSecondary} /><Text style={{ color: colors.textSecondary, marginTop: 8 }}>Add Photo (Important!)</Text></View>}
               </Pressable>
 
-              <CustomDropdown label="Pet Category *" value={form.petCategory} options={CATEGORIES} onSelect={(val) => setForm({...form, petCategory: val})} />
+              <CustomDropdown label="Pet Category *" value={form.petCategory} options={CATEGORY_OPTIONS} onSelect={(val) => { setForm({...form, petCategory: val}); if (val !== 'Other') setOtherCategoryText(''); }} />
+              {/* [OTHER-CATEGORY] show free-text when Other is selected */}
+              {form.petCategory === 'Other' && (
+                <CustomInput label="Specify Pet Type *" placeholder="e.g., Hamster, Turtle, Parrot" value={otherCategoryText} onChangeText={setOtherCategoryText} />
+              )}
               
               {form.reportType === 'Lost' && (
                 <CustomInput label="Pet's Name" placeholder="e.g., Bella" value={form.petName} onChangeText={t => setForm({...form, petName: t})} />

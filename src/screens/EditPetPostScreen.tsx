@@ -32,7 +32,8 @@ export default function EditPetPostScreen({ route, navigation }: any) {
   );
 
   const [form, setForm] = useState({
-    category: pet.category || 'Dog',
+    // [OTHER-CATEGORY] map non-standard existing categories to "Other" so the dropdown stays valid
+    category: CATEGORIES.includes(pet.category) ? (pet.category || 'Dog') : 'Other',
     pet_name: pet.pet_name || '',
     breed: pet.breed || '',
     age: String(pet.age ?? ''),
@@ -48,10 +49,18 @@ export default function EditPetPostScreen({ route, navigation }: any) {
     tags: (pet.tags as string[]) || [],
   });
   const [saving, setSaving] = useState(false);
+  // [OTHER-CATEGORY] pre-fill if existing pet category isn't in the standard list
+  const [otherCategoryText, setOtherCategoryText] = useState(
+    CATEGORIES.includes(pet.category) ? '' : (pet.category || '')
+  );
 
   const onSave = async () => {
-    if (!form.pet_name || !form.location || !form.age) {
-      Alert.alert('Missing details', 'Name, location, and age are required.');
+    const resolvedCategory = form.category === 'Other' ? otherCategoryText.trim() : form.category;
+    if (!form.pet_name || !form.location || !form.age || !resolvedCategory) {
+      const msg = form.category === 'Other' && !otherCategoryText.trim()
+        ? 'Please specify the pet type when selecting "Other".'
+        : 'Name, location, and age are required.';
+      Alert.alert('Missing details', msg);
       return;
     }
     if (uploader.anyUploading) { Alert.alert('Photos still uploading', 'Please wait.'); return; }
@@ -59,7 +68,7 @@ export default function EditPetPostScreen({ route, navigation }: any) {
     try {
       const image_urls = uploader.urls;
       await api.updatePetPost(pet.id, {
-        category: form.category,
+        category: resolvedCategory,
         pet_name: form.pet_name,
         breed: form.breed,
         age: Number(form.age),
@@ -116,7 +125,11 @@ export default function EditPetPostScreen({ route, navigation }: any) {
             )}
           </View>
 
-          <CustomDropdown label="Species" value={form.category} options={CATEGORIES} onSelect={(v: string) => setForm({ ...form, category: v })} />
+          <CustomDropdown label="Species" value={form.category} options={CATEGORIES} onSelect={(v: string) => { setForm({ ...form, category: v }); if (v !== 'Other') setOtherCategoryText(''); }} />
+          {/* [OTHER-CATEGORY] free-text when Other is selected */}
+          {form.category === 'Other' && (
+            <CustomInput label="Specify Pet Type *" placeholder="e.g., Hamster, Turtle, Parrot" value={otherCategoryText} onChangeText={setOtherCategoryText} />
+          )}
           <CustomInput label="Pet name *" placeholder="Buddy" value={form.pet_name} onChangeText={(t: string) => setForm({ ...form, pet_name: t })} />
           <CustomInput label="Breed" placeholder="e.g., Golden Retriever" value={form.breed} onChangeText={(t: string) => setForm({ ...form, breed: t })} />
 

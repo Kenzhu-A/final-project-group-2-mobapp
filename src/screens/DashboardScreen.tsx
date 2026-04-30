@@ -24,6 +24,10 @@ const CATEGORY_OPTIONS = [
   { key: 'Other', dbValue: 'Other' },
 ];
 
+// [OTHER-CATEGORY] standard categories — anything outside this list is treated as "Other"
+const STANDARD_CATS = ['Dog', 'Cat', 'Bird', 'Rabbit'];
+const isOtherCat = (cat: string) => !STANDARD_CATS.includes(cat);
+
 const CATEGORY_KEY = 'lastSelectedCategory_v1';
 const FILTERS_KEY = 'dashboardFilters_v1';
 const NEAR_YOU_LIMIT = 8; // cards shown in the horizontal strip
@@ -115,7 +119,11 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
   const counts = useMemo(() => {
     const c: Record<string, number> = { All: pets.length };
     for (const opt of CATEGORY_OPTIONS) {
-      if (opt.dbValue) c[opt.key] = pets.filter((p) => p.category === opt.dbValue).length;
+      if (!opt.dbValue) continue;
+      // [OTHER-CATEGORY] "Other" matches any non-standard category stored as custom text
+      c[opt.key] = opt.dbValue === 'Other'
+        ? pets.filter((p) => isOtherCat(p.category)).length
+        : pets.filter((p) => p.category === opt.dbValue).length;
     }
     return c;
   }, [pets]);
@@ -125,13 +133,24 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
     return pets.filter((p) => {
       if (selectedCategory !== 'All') {
         const opt = CATEGORY_OPTIONS.find((o) => o.key === selectedCategory);
-        if (opt?.dbValue && p.category !== opt.dbValue) return false;
+        if (opt?.dbValue === 'Other') {
+          // [OTHER-CATEGORY] chip: show non-standard categories (Chicken, Hamster, etc.)
+          if (!isOtherCat(p.category)) return false;
+        } else if (opt?.dbValue && p.category !== opt.dbValue) {
+          return false;
+        }
       }
       if (q) {
         const hay = `${p.pet_name || ''} ${p.breed || ''} ${p.location || ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
-      if (filters.species?.length && !filters.species.includes(p.category)) return false;
+      // [OTHER-CATEGORY] FilterScreen species — 'Other' matches any non-standard category
+      if (filters.species?.length) {
+        const matched = filters.species.some((s) =>
+          s === 'Other' ? isOtherCat(p.category) : p.category === s
+        );
+        if (!matched) return false;
+      }
       if (filters.size?.length && !filters.size.includes(p.size)) return false;
       if (filters.maxPrice != null && (p.price ?? 0) > filters.maxPrice) return false;
       if (filters.city && !(p.location || '').toLowerCase().includes(filters.city.toLowerCase())) return false;
@@ -279,9 +298,9 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
         <View style={{ width: 20 }} />
       </ScrollView>
 
-      {/* Near you — horizontal strip with "See all" */}
+      {/* Pet adoption listings — horizontal strip with "See all" */}
       <View style={[styles.nearYouRow, { paddingHorizontal: 20, marginTop: 20 }]}>
-        <Text style={[styles.nearYou, { color: colors.textPrimary }]}>Near you</Text>
+        <Text style={[styles.nearYou, { color: colors.textPrimary }]}>Pet Adoption Listings</Text>
         <Pressable onPress={() => navigation.navigate('AllPetsScreen')}>
           <Text style={[styles.seeAll, { color: colors.accent }]}>See all</Text>
         </Pressable>

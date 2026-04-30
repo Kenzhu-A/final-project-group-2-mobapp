@@ -9,7 +9,7 @@ import AdminBottomNavBar from '../../components/AdminBottomNavBar';
 import AdminDashboardScreen from './AdminDashboardScreen';
 import AdminAnnouncementsScreen from './AdminAnnouncementsScreen';
 import AdminMessagesScreen from './AdminMessagesScreen'; // [ADMIN-MESSAGES]
-import ProfileScreen from '../ProfileScreen';
+import AdminProfileScreen from './AdminProfileScreen'; // [ADMIN] separate admin profile
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -43,7 +43,7 @@ export default function AdminHomeScreen({ navigation }: any) {
         {activeTab === 'dashboard' && <AdminDashboardScreen />}
         {activeTab === 'announcements' && <AdminAnnouncementsScreen />}
         {activeTab === 'messages' && <AdminMessagesScreen />}
-        {activeTab === 'profile' && <ProfileScreen navigation={navigation} handleSignOut={handleSignOut} />}
+        {activeTab === 'profile' && <AdminProfileScreen navigation={navigation} handleSignOut={handleSignOut} />}
 
       </View>
       <AdminBottomNavBar activeTab={activeTab} setActiveTab={handleTabChange} />

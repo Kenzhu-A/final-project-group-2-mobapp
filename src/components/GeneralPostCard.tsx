@@ -1,8 +1,10 @@
+// [COMMUNITY-FEED] community post card with like, save, comment, and report
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Alert, Modal, FlatList, TextInput, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../services/api';
+import ReportModal from './ReportModal'; // [REPORTS]
 
 export default function GeneralPostCard({ item, colors, onUnsave }: any) {
   const [expanded, setExpanded] = useState(false);
@@ -15,6 +17,7 @@ export default function GeneralPostCard({ item, colors, onUnsave }: any) {
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [postingComment, setPostingComment] = useState(false);
+  const [showReport, setShowReport] = useState(false); // [REPORTS]
 
   useEffect(() => {
     AsyncStorage.getItem('userId').then(uid => {
@@ -87,29 +90,19 @@ export default function GeneralPostCard({ item, colors, onUnsave }: any) {
     }
   };
 
-  const handleOptions = () => {
-    if (item.owner_id === currentUserId) {
-      Alert.alert("Manage Post", "What would you like to do?", [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete Post", 
-          style: "destructive", 
-          onPress: async () => {
-            try {
-              await api.deleteGeneralPost(item.id);
-              Alert.alert("Deleted", "Post removed. Pull to refresh your feed.");
-            } catch (e) { 
-              Alert.alert("Error", "Failed to delete."); 
-            }
-          }
-        }
-      ]);
-    } else {
-      Alert.alert("Report Post", "Are you sure you want to report this post?", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Report", style: "destructive", onPress: () => Alert.alert("Reported", "Our team will review this post.") }
-      ]);
-    }
+  const handleDeleteOwn = () => {
+    Alert.alert('Delete Post', 'Are you sure you want to permanently delete this post?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.deleteGeneralPost(item.id);
+            Alert.alert('Deleted', 'Post removed. Pull to refresh your feed.');
+          } catch (e) { Alert.alert('Error', 'Failed to delete.'); }
+        },
+      },
+    ]);
   };
 
   return (
@@ -121,9 +114,18 @@ export default function GeneralPostCard({ item, colors, onUnsave }: any) {
           <Image source={item.owner?.avatar_url ? { uri: item.owner.avatar_url } : require('../../assets/adaptive-icon.png')} style={styles.avatar} />
           <Text style={[styles.userName, { color: colors.textPrimary }]}>{item.owner?.full_name || 'Anonymous User'}</Text>
         </View>
-        <Pressable onPress={handleOptions}>
-          <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
-        </Pressable>
+        {/* [REPORTS] own post → delete via 3-dots; other's post → flag/report icon; no userId → hide both */}
+        {currentUserId ? (
+          item.owner_id === currentUserId ? (
+            <Pressable onPress={handleDeleteOwn} style={{ padding: 4 }}>
+              <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
+            </Pressable>
+          ) : (
+            <Pressable onPress={() => setShowReport(true)} style={{ padding: 4 }}>
+              <Ionicons name="flag-outline" size={20} color={colors.textSecondary} />
+            </Pressable>
+          )
+        ) : null}
       </View>
 
       {item.image_url ? (
@@ -159,6 +161,15 @@ export default function GeneralPostCard({ item, colors, onUnsave }: any) {
           )}
         </View>
       ) : null}
+
+      {/* [REPORTS] report modal — shown for other users' posts */}
+      <ReportModal
+        visible={showReport}
+        onClose={() => setShowReport(false)}
+        reportType="community_post"
+        itemId={String(item.id)}
+        reporterId={currentUserId || ''}
+      />
 
       <Modal visible={showComments} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowComments(false)}>
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>

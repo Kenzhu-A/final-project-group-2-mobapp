@@ -322,6 +322,31 @@ export const api = {
     if (!response.ok) throw new Error('Failed to delete report');
   },
 
+  // [REPORTS] content reporting
+  createReport: async (data: { report_type: string; item_id: string; reporter_id: string; reason: string; description?: string }) => {
+    const response = await fetch(`${BASE_URL}/reports`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const json = await response.json();
+    if (!response.ok) throw new Error(json.error || 'Failed to submit report');
+    return json;
+  },
+  getAdminReports: async () => {
+    const response = await fetch(`${BASE_URL}/reports`);
+    if (!response.ok) throw new Error('Failed to fetch reports');
+    return await response.json();
+  },
+  dismissReport: async (id: string) => {
+    const response = await fetch(`${BASE_URL}/reports/${id}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to dismiss report');
+  },
+  deleteReportedContent: async (id: string) => {
+    const response = await fetch(`${BASE_URL}/reports/${id}/content`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete reported content');
+  },
+
   getConversations: async (userId: string) => {
     const response = await fetch(`${BASE_URL}/messages/conversations/${userId}`);
     if (!response.ok) throw new Error('Failed to fetch conversations');
@@ -359,6 +384,22 @@ export const api = {
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error('Failed to create announcement');
+    return await response.json();
+  },
+  // [ADMIN-PETS] all pets regardless of status (user-facing getAllPets is filtered to 'available' only)
+  getAdminAllPets: async () => {
+    const response = await fetch(`${BASE_URL}/admin/pets`);
+    if (!response.ok) throw new Error('Failed to fetch admin pets');
+    return await response.json();
+  },
+  // [ADMIN-ANNOUNCE-EDIT] update title/content of an existing announcement
+  updateAnnouncement: async (id: string, data: { title: string; content: string }) => {
+    const response = await fetch(`${BASE_URL}/admin/announcements/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update announcement');
     return await response.json();
   },
   deleteAnnouncement: async (id: string) => {

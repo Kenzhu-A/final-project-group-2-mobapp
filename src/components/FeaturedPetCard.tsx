@@ -23,7 +23,8 @@ export default function FeaturedPetCard({ pet, onPress, onSayHi, fixedHeight, is
       <View style={styles.left}>
         <Text style={[styles.eyebrow, { color: colors.accent }]}>FEATURED TODAY</Text>
         <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>Meet {pet.pet_name}!</Text>
-        <Text style={[styles.desc, { color: colors.textSecondary }]} numberOfLines={2}>
+        {/* [HERO-CAROUSEL] 1-line limit so the button is never pushed out of the fixed-height card */}
+        <Text style={[styles.desc, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
           {pet.description || `${pet.breed || pet.category}, ${pet.age} ${pet.age === 1 ? 'year' : 'years'} old.`}
         </Text>
         {/* [HERO-CAROUSEL] owner sees "View Details", others see "Say Hi" */}

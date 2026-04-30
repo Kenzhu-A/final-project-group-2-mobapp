@@ -21,6 +21,7 @@ import SavedPetsScreen from './SavedPetsScreen';
 
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
+import { useSavedPets } from '../hooks/useSavedPets'; // [SAVED-PETS]
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -44,6 +45,7 @@ const TAGS_LIST = [
 
 export default function HomeScreen({ navigation }: any) {
   const { colors, resetTheme } = useTheme();
+  const { refresh: refreshSavedPets } = useSavedPets(); // [SAVED-PETS] re-scope to logged-in user on mount
   
   const [activeTab, setActiveTab] = useState('home'); // [DASHBOARD-REDESIGN]
 
@@ -59,6 +61,8 @@ export default function HomeScreen({ navigation }: any) {
     gender: 'Unknown', weightKg: '', size: 'Medium', tags: [] as string[], // [DASHBOARD-REDESIGN]
   });
   const petUploader = useImageUploader([]); // [UPLOAD-PROGRESS] multi-image for adoption form
+  // [OTHER-CATEGORY] free-text input shown when user selects "Other" as pet category
+  const [otherCategoryText, setOtherCategoryText] = useState('');
 
   // --- LOCATION API STATE ---
   const [locationQuery, setLocationQuery] = useState('');
@@ -71,6 +75,9 @@ export default function HomeScreen({ navigation }: any) {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => true); 
     return () => sub.remove(); 
   }, []));
+
+  // [SAVED-PETS] re-read userId and reload saved pets for the newly logged-in user
+  useEffect(() => { refreshSavedPets(); }, []);
 
   useEffect(() => {
     // Fetch Philippine Provinces ONCE in the background when app loads
@@ -181,8 +188,13 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const handleSubmitAdoptionPost = async () => {
-    if (!petForm.petName || !petForm.location || !petForm.age || !petForm.category || !petForm.breed) {
-      Alert.alert('Missing Details', 'Please fill in all required fields (Category, Name, Breed, Age, Location).');
+    // [OTHER-CATEGORY] resolve the actual category before validation
+    const resolvedCategory = petForm.category === 'Other' ? otherCategoryText.trim() : petForm.category;
+    if (!petForm.petName || !petForm.location || !petForm.age || !resolvedCategory || !petForm.breed) {
+      const msg = petForm.category === 'Other' && !otherCategoryText.trim()
+        ? 'Please specify the pet type when selecting "Other" as category.'
+        : 'Please fill in all required fields (Category, Name, Breed, Age, Location).';
+      Alert.alert('Missing Details', msg);
       return;
     }
     if (isNaN(Number(petForm.age))) { Alert.alert('Invalid Age', 'Age must contain only numbers.'); return; }
@@ -198,7 +210,7 @@ export default function HomeScreen({ navigation }: any) {
       const cover = image_urls[0] || null;
 
       await api.createPetPost({
-        owner_id: userId, category: petForm.category,
+        owner_id: userId, category: resolvedCategory,
         image_url: cover, image_urls,                // [DASHBOARD-REDESIGN]
         pet_name: petForm.petName, breed: petForm.breed,
         age: Number(petForm.age), price: petForm.price ? Number(petForm.price) : 0,
@@ -212,6 +224,7 @@ export default function HomeScreen({ navigation }: any) {
       
       Alert.alert('Success!', 'Pet listed for adoption.');
       setPetForm({ category: 'Dog', petName: '', breed: '', age: '', price: '', location: '', description: '', medicalHistory: '', behavior: '', personality: '', gender: 'Unknown', weightKg: '', size: 'Medium', tags: [] }); // [DASHBOARD-REDESIGN]
+      setOtherCategoryText(''); // [OTHER-CATEGORY]
       setLocationQuery('');
       setSelectedImage(null);
       setActiveTab('home'); // [DASHBOARD-REDESIGN]
@@ -280,7 +293,11 @@ export default function HomeScreen({ navigation }: any) {
 
               {postType === 'adoption' && (
                 <View>
-                  <CustomDropdown label="Pet Category *" value={petForm.category} options={CATEGORIES} onSelect={(val) => setPetForm({...petForm, category: val, breed: ''})} />
+                  <CustomDropdown label="Pet Category *" value={petForm.category} options={CATEGORIES} onSelect={(val) => { setPetForm({...petForm, category: val, breed: ''}); if (val !== 'Other') setOtherCategoryText(''); }} />
+                  {/* [OTHER-CATEGORY] show free-text field when Other is selected */}
+                  {petForm.category === 'Other' && (
+                    <CustomInput label="Specify Pet Type *" placeholder="e.g., Hamster, Turtle, Parrot" value={otherCategoryText} onChangeText={setOtherCategoryText} />
+                  )}
                   <CustomInput label="Pet Name *" placeholder="e.g., Buddy" value={petForm.petName} onChangeText={t => setPetForm({...petForm, petName: t})} />
                   <CustomDropdown label="Breed *" value={petForm.breed} options={getBreedOptions()} onSelect={(val) => setPetForm({...petForm, breed: val})} />
                   

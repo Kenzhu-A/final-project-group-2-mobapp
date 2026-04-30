@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import { 
-  View, Text, StyleSheet, KeyboardAvoidingView, Platform, 
-  ScrollView, TouchableWithoutFeedback, Keyboard, Image, BackHandler, Alert, Pressable
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import {
+  View, Text, StyleSheet, KeyboardAvoidingView, Platform,
+  ScrollView, TouchableWithoutFeedback, Keyboard, Image, BackHandler, Alert, Pressable, Modal, Animated
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -22,6 +22,22 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({ email: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
+  // [LOGIN-MODAL] pet-themed success modal shown briefly after login
+  const [successModal, setSuccessModal] = useState<{ visible: boolean; role: string; dest: string }>({ visible: false, role: 'user', dest: 'Home' });
+  const scaleAnim = useRef(new Animated.Value(0.7)).current;
+
+  useEffect(() => {
+    if (successModal.visible) {
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, friction: 5 }).start();
+      const timer = setTimeout(() => {
+        setSuccessModal((s) => ({ ...s, visible: false }));
+        navigation.navigate(successModal.dest);
+      }, 1800);
+      return () => clearTimeout(timer);
+    } else {
+      scaleAnim.setValue(0.7);
+    }
+  }, [successModal.visible]);
 
   useFocusEffect(
     useCallback(() => {
@@ -59,12 +75,9 @@ export default function LoginScreen({ navigation }: any) {
           } catch (e) { console.warn('[PUSH-NOTIF] login token register skipped:', (e as any)?.message); }
         })();
 
-        // Navigate based on role!
-        if (role === 'admin') {
-          navigation.navigate('AdminHomeScreen');
-        } else {
-          navigation.navigate('Home');
-        }
+        // [LOGIN-MODAL] show success modal, then navigate
+        const dest = role === 'admin' ? 'AdminHomeScreen' : 'Home';
+        setSuccessModal({ visible: true, role, dest });
       } catch (err: any) {
         Alert.alert('Login Error', err.message);
       } finally {
@@ -194,6 +207,26 @@ export default function LoginScreen({ navigation }: any) {
           </ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
+      {/* [LOGIN-MODAL] pet-themed success overlay */}
+      <Modal visible={successModal.visible} transparent animationType="fade" statusBarTranslucent>
+        <View style={styles.modalOverlay}>
+          <Animated.View style={[styles.modalCard, { transform: [{ scale: scaleAnim }] }]}>
+            <View style={styles.modalPawBadge}>
+              <Text style={styles.modalPawEmoji}>🐾</Text>
+            </View>
+            <Text style={styles.modalTitle}>Welcome back!</Text>
+            <Text style={styles.modalSub}>
+              {successModal.role === 'admin' ? 'Signing in as Admin…' : 'Finding your furry friends…'}
+            </Text>
+            <View style={styles.modalDots}>
+              <View style={[styles.dot, styles.dotActive]} />
+              <View style={styles.dot} />
+              <View style={styles.dot} />
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -224,4 +257,14 @@ const styles = StyleSheet.create({
   signupText: { fontSize: 14, fontFamily: 'DMSans_700Bold' },
   testButton: { marginTop: 32, paddingVertical: 8, alignSelf: 'center', backgroundColor: '#E8F5E9', paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: '#28A745' },
   testButtonText: { color: '#28A745', fontSize: 12, fontFamily: 'DMSans_700Bold' },
+  // [LOGIN-MODAL]
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center' },
+  modalCard: { backgroundColor: '#FFF', borderRadius: 24, paddingHorizontal: 40, paddingVertical: 36, alignItems: 'center', width: 280, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.18, shadowRadius: 20, elevation: 12 },
+  modalPawBadge: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#1D9E7518', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  modalPawEmoji: { fontSize: 40 },
+  modalTitle: { fontSize: 22, fontFamily: 'DMSerifDisplay_400Regular', color: '#444441', marginBottom: 6 },
+  modalSub: { fontSize: 13, fontFamily: 'DMSans_400Regular', color: '#6C757D', textAlign: 'center', marginBottom: 20 },
+  modalDots: { flexDirection: 'row', gap: 6 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#dddddd' },
+  dotActive: { backgroundColor: '#1D9E75', width: 20 },
 });

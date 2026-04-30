@@ -48,6 +48,8 @@ import AdminUserConversationsScreen from './src/screens/admin/AdminUserConversat
 import AdminMessageThreadScreen from './src/screens/admin/AdminMessageThreadScreen'; // [ADMIN-MESSAGES]
 import AdminUsersScreen from './src/screens/admin/AdminUsersScreen'; // [ADMIN]
 import AdminLostFoundModerationScreen from './src/screens/admin/AdminLostFoundModerationScreen'; // [ADMIN]
+import AdminPetsScreen from './src/screens/admin/AdminPetsScreen'; // [ADMIN]
+import AdminReportsScreen from './src/screens/admin/AdminReportsScreen'; // [REPORTS]
 
 // Initializes Notifications.setNotificationHandler on import
 import './src/utils/notifications';
@@ -139,6 +141,8 @@ export default function App() {
               <Stack.Screen name="AdminMessageThreadScreen" component={AdminMessageThreadScreen} />
               <Stack.Screen name="AdminUsersScreen" component={AdminUsersScreen} />
               <Stack.Screen name="AdminLostFoundModerationScreen" component={AdminLostFoundModerationScreen} />
+              <Stack.Screen name="AdminPetsScreen" component={AdminPetsScreen} />
+              <Stack.Screen name="AdminReportsScreen" component={AdminReportsScreen} />
             </Stack.Navigator>
             <StatusBar style="auto" />
           </NavigationContainer>

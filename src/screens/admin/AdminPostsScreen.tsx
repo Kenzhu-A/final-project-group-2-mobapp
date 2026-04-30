@@ -1,11 +1,14 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿// [ADMIN] manage system posts — view all general_posts, delete by admin
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api';
 
 export default function AdminPostsScreen({ navigation }: any) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,13 +35,12 @@ export default function AdminPostsScreen({ navigation }: any) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <Pressable onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
+      <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 8 }]}>
+        <Pressable onPress={() => navigation.goBack()} style={{ padding: 4, marginRight: 12 }}>
+          <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Manage Posts</Text>
-        <View style={{ width: 32 }} />
       </View>
 
       {loading ? (
@@ -66,13 +68,13 @@ export default function AdminPostsScreen({ navigation }: any) {
           )}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
+  safe: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingBottom: 16, borderBottomWidth: 1 },
   headerTitle: { fontSize: 18, fontFamily: 'DMSans_700Bold' },
   postCard: { borderRadius: 16, borderWidth: 1, marginBottom: 16, paddingBottom: 16, overflow: 'hidden' },
   postHeader: { flexDirection: 'row', alignItems: 'center', padding: 16 },
