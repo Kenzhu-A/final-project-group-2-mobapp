@@ -12,6 +12,7 @@ import { ThemeProvider } from './src/context/ThemeContext';
 import { SavedPetsProvider } from './src/hooks/useSavedPets'; // [SAVED-PETS]
 import { api } from './src/services/api'; // [PUSH-NOTIF]
 import { registerForPushNotificationsAsync } from './src/utils/notifications'; // [PUSH-NOTIF]
+import { pushLocalNotification } from './src/screens/ChatNotificationsScreen'; // [ANNOUNCEMENTS]
 
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
@@ -77,11 +78,58 @@ export default function App() {
     })();
   }, []);
 
-  // [PUSH-NOTIF] route notification taps by data.type
+  // [ANNOUNCEMENTS] write foreground push notifications to local notification store
+  useEffect(() => {
+    const sub = Notifications.addNotificationReceivedListener((notification) => {
+      const { title, body, data } = notification.request.content as any;
+      if (data?.type === 'announcement') {
+        pushLocalNotification(
+          { title: title || 'Announcement', desc: body || '', time: new Date().toISOString(), icon: 'megaphone-outline' },
+          data.announcementId ? `announcement_${data.announcementId}` : undefined,
+        ).catch(() => {});
+      } else if (data?.type === 'new_message') {
+        pushLocalNotification(
+          {
+            title: title || 'New message',
+            desc: body || '',
+            time: new Date().toISOString(),
+            icon: 'chatbubble-outline',
+            type: 'new_message',
+            senderId: data.senderId,
+            senderName: data.senderName,
+          },
+          `message_${notification.request.identifier}`,
+        ).catch(() => {});
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  // [PUSH-NOTIF] route notification taps by data.type + write to local store (deduped)
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as any;
+      const { title, body, data } = response.notification.request.content as any;
       const nav = navigationRef.current;
+      // write to local notifications (dedup key prevents double-entry with foreground listener)
+      if (data?.type === 'announcement') {
+        pushLocalNotification(
+          { title: title || 'Announcement', desc: body || '', time: new Date().toISOString(), icon: 'megaphone-outline' },
+          data.announcementId ? `announcement_${data.announcementId}` : undefined,
+        ).catch(() => {});
+      } else if (data?.type === 'new_message') {
+        pushLocalNotification(
+          {
+            title: title || 'New message',
+            desc: body || '',
+            time: new Date().toISOString(),
+            icon: 'chatbubble-outline',
+            type: 'new_message',
+            senderId: data.senderId,
+            senderName: data.senderName,
+          },
+          `message_${response.notification.request.identifier}`,
+        ).catch(() => {});
+      }
       if (!nav || !data?.type) return;
       if (data.type === 'pet_adopted' && data.petId) {
         nav.navigate('PetDetailsScreen', { petId: data.petId });
@@ -91,6 +139,8 @@ export default function App() {
           receiverName: data.senderName || 'User',
           senderId: undefined,
         });
+      } else if (data.type === 'announcement') {
+        nav.navigate('ChatNotifications');
       }
     });
     return () => sub.remove();

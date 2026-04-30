@@ -31,12 +31,17 @@ export default function EditPetPostScreen({ route, navigation }: any) {
       : pet.image_url ? [pet.image_url] : []
   );
 
+  // [AGE-UNIT] parse age to extract unit and number (e.g., "2 Years" -> unit: "Years", number: "2")
+  const ageText = String(pet.age ?? '');
+  const ageNumber = ageText.split(/\s+/)[0]; // Extract just the number part
+  const ageUnit = ageText.includes('Month') ? 'Months' : 'Years';
+
   const [form, setForm] = useState({
     // [OTHER-CATEGORY] map non-standard existing categories to "Other" so the dropdown stays valid
     category: CATEGORIES.includes(pet.category) ? (pet.category || 'Dog') : 'Other',
     pet_name: pet.pet_name || '',
     breed: pet.breed || '',
-    age: String(pet.age ?? ''),
+    age: ageNumber || String(pet.age ?? ''),
     price: String(pet.price ?? ''),
     location: pet.location || '',
     description: pet.description || '',
@@ -48,6 +53,7 @@ export default function EditPetPostScreen({ route, navigation }: any) {
     size: (pet.size || 'medium').replace(/^./, (c: string) => c.toUpperCase()),
     tags: (pet.tags as string[]) || [],
   });
+  const [ageUnitState, setAgeUnitState] = useState(ageUnit);
   const [saving, setSaving] = useState(false);
   // [OTHER-CATEGORY] pre-fill if existing pet category isn't in the standard list
   const [otherCategoryText, setOtherCategoryText] = useState(
@@ -71,7 +77,7 @@ export default function EditPetPostScreen({ route, navigation }: any) {
         category: resolvedCategory,
         pet_name: form.pet_name,
         breed: form.breed,
-        age: Number(form.age),
+        age: `${form.age} ${ageUnitState}`,
         price: form.price ? Number(form.price) : 0,
         location: form.location,
         description: form.description,
@@ -133,12 +139,13 @@ export default function EditPetPostScreen({ route, navigation }: any) {
           <CustomInput label="Pet name *" placeholder="Buddy" value={form.pet_name} onChangeText={(t: string) => setForm({ ...form, pet_name: t })} />
           <CustomInput label="Breed" placeholder="e.g., Golden Retriever" value={form.breed} onChangeText={(t: string) => setForm({ ...form, breed: t })} />
 
+          {/* [AGE-UNIT] separate age number and unit dropdowns */}
           <View style={{ flexDirection: 'row' }}>
             <View style={{ flex: 1, marginRight: 8 }}>
-              <CustomInput label="Age (yrs) *" value={form.age} onChangeText={(t: string) => setForm({ ...form, age: t })} keyboardType="numeric" />
+              <CustomInput label="Age *" placeholder="e.g., 2" value={form.age} onChangeText={(t: string) => setForm({ ...form, age: t })} keyboardType="numeric" />
             </View>
             <View style={{ flex: 1, marginLeft: 8 }}>
-              <CustomDropdown label="Sex" value={form.gender} options={GENDERS} onSelect={(v: string) => setForm({ ...form, gender: v })} />
+              <CustomDropdown label="Unit" value={ageUnitState} options={['Years', 'Months']} onSelect={(v: string) => setAgeUnitState(v)} />
             </View>
           </View>
 
@@ -150,6 +157,17 @@ export default function EditPetPostScreen({ route, navigation }: any) {
               <CustomInput label="Weight (kg)" value={form.weight_kg} onChangeText={(t: string) => setForm({ ...form, weight_kg: t })} keyboardType="numeric" />
             </View>
           </View>
+
+          <View style={{ flexDirection: 'row' }}>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <CustomDropdown label="Size" value={form.size} options={SIZES_LIST} onSelect={(v: string) => setForm({ ...form, size: v })} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 8 }}>
+              <CustomInput label="Weight (kg)" value={form.weight_kg} onChangeText={(t: string) => setForm({ ...form, weight_kg: t })} keyboardType="numeric" />
+            </View>
+          </View>
+
+          <CustomDropdown label="Sex" value={form.gender} options={GENDERS} onSelect={(v: string) => setForm({ ...form, gender: v })} />
 
           <CustomInput label="Location *" placeholder="City, Province" value={form.location} onChangeText={(t: string) => setForm({ ...form, location: t })} />
           <CustomInput label="Adoption fee (₱)" value={form.price} onChangeText={(t: string) => setForm({ ...form, price: t })} keyboardType="numeric" />

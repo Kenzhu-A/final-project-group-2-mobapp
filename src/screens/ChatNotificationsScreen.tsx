@@ -1,8 +1,8 @@
 ﻿// [PUSH-NOTIF] Notifications screen — AsyncStorage-backed, supports delete + multi-select
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
-  Alert, Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 
 const NOTIF_KEY = 'snoutscout_notifications';
+const isMessageNotif = (n: AppNotification) => n.type === 'new_message' || n.icon === 'chatbubble-outline';
 
 export interface AppNotification {
   id: string;
@@ -19,13 +20,22 @@ export interface AppNotification {
   time: string;         // ISO string stored; displayed relative or formatted
   icon: string;         // Ionicons name
   read: boolean;
+  type?: 'new_message' | 'announcement' | 'system';
+  senderId?: string;
+  senderName?: string;
 }
 
 // [PUSH-NOTIF] helper — write a new notification from anywhere via AsyncStorage
-export async function pushLocalNotification(notif: Omit<AppNotification, 'id' | 'read'>) {
+// dedupKey: if supplied, the notification is skipped when one with that id already exists
+export async function pushLocalNotification(
+  notif: Omit<AppNotification, 'id' | 'read'>,
+  dedupKey?: string,
+) {
   const raw = await AsyncStorage.getItem(NOTIF_KEY);
   const list: AppNotification[] = raw ? JSON.parse(raw) : [];
-  const next = [{ ...notif, id: `${Date.now()}-${Math.random()}`, read: false }, ...list];
+  if (dedupKey && list.some((n) => n.id === dedupKey)) return;
+  const id = dedupKey || `${Date.now()}-${Math.random()}`;
+  const next = [{ ...notif, id, read: false }, ...list];
   await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(next));
 }
 
@@ -48,6 +58,27 @@ export default function ChatNotificationsScreen({ navigation }: any) {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const messageNotifs = notifications
+    .filter((n) => isMessageNotif(n))
+    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+
+  const [latest, ...rest] = messageNotifs;
+  const listItems = useMemo(() => {
+    const today: Array<{ type: 'item'; item: AppNotification } | { type: 'section'; label: string }> = [];
+    const earlier: Array<{ type: 'item'; item: AppNotification } | { type: 'section'; label: string }> = [];
+    rest.forEach((item) => {
+      if (new Date(item.time).toDateString() === new Date().toDateString()) {
+        today.push({ type: 'item', item });
+      } else {
+        earlier.push({ type: 'item', item });
+      }
+    });
+    const result: Array<{ type: 'item'; item: AppNotification } | { type: 'section'; label: string }> = [];
+    if (today.length > 0) result.push({ type: 'section', label: 'Today' }, ...today);
+    if (earlier.length > 0) result.push({ type: 'section', label: 'Earlier' }, ...earlier);
+    return result;
+  }, [rest]);
+
   // [PUSH-NOTIF] load from AsyncStorage; seed welcome notif on first open
   const load = useCallback(async () => {
     const raw = await AsyncStorage.getItem(NOTIF_KEY);
@@ -67,11 +98,16 @@ export default function ChatNotificationsScreen({ navigation }: any) {
       await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(seed));
       setNotifications(seed);
     }
-    // mark all as read
+    // mark all message notifications as read when viewing this screen
     const updated: AppNotification[] = raw
-      ? JSON.parse(raw).map((n: AppNotification) => ({ ...n, read: true }))
+      ? JSON.parse(raw).map((n: AppNotification) =>
+          isMessageNotif(n) ? { ...n, read: true } : n
+        )
       : [];
-    if (updated.length) AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(updated)).catch(() => {});
+    if (updated.length) {
+      setNotifications(updated);
+      AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(updated)).catch(() => {});
+    }
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -126,10 +162,18 @@ export default function ChatNotificationsScreen({ navigation }: any) {
     setSelected(new Set());
   };
 
-  const allSelected = notifications.length > 0 && selected.size === notifications.length;
+  const markAllRead = async () => {
+    const next = notifications.map((n) =>
+      isMessageNotif(n) ? { ...n, read: true } : n
+    );
+    setNotifications(next);
+    await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(next));
+  };
+
+  const allSelected = messageNotifs.length > 0 && selected.size === messageNotifs.length;
   const toggleSelectAll = () => {
     if (allSelected) setSelected(new Set());
-    else setSelected(new Set(notifications.map((n) => n.id)));
+    else setSelected(new Set(messageNotifs.map((n) => n.id)));
   };
 
   return (
@@ -158,10 +202,15 @@ export default function ChatNotificationsScreen({ navigation }: any) {
               <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
             </Pressable>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Notifications</Text>
-            {notifications.length > 0 ? (
-              <Pressable onPress={clearAll} style={{ padding: 4 }}>
-                <Text style={[styles.clearText, { color: colors.primary }]}>Clear all</Text>
-              </Pressable>
+            {messageNotifs.length > 0 ? (
+              <View style={styles.headerActions}>
+                <Pressable onPress={markAllRead} style={{ padding: 4 }}>
+                  <Text style={[styles.clearText, { color: colors.textSecondary }]}>Mark all read</Text>
+                </Pressable>
+                <Pressable onPress={clearAll} style={{ padding: 4 }}>
+                  <Text style={[styles.clearText, { color: colors.primary }]}>Clear all</Text>
+                </Pressable>
+              </View>
             ) : (
               <View style={{ width: 60 }} />
             )}
@@ -180,27 +229,75 @@ export default function ChatNotificationsScreen({ navigation }: any) {
       )}
 
       <FlatList
-        data={notifications}
-        keyExtractor={(item) => item.id}
+        data={listItems}
+        keyExtractor={(item, index) => (item.type === 'section' ? `section_${item.label}_${index}` : item.item.id)}
         contentContainerStyle={[
           { padding: 16, paddingBottom: 110 },
-          notifications.length === 0 && styles.emptyContainer,
+          messageNotifs.length === 0 && styles.emptyContainer,
         ]}
         ListEmptyComponent={
           <View style={styles.emptyInner}>
             <Ionicons name="notifications-off-outline" size={56} color={colors.border} />
-            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No notifications</Text>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No message notifications</Text>
             <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
               You're all caught up! Check back later.
             </Text>
           </View>
         }
+        ListHeaderComponent={
+          latest ? (
+            <View style={{ marginBottom: 8 }}>
+              <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Latest</Text>
+              <Pressable
+                onPress={() =>
+                  latest.senderId
+                    ? navigation.navigate('ChatScreen', {
+                        receiverId: latest.senderId,
+                        receiverName: latest.senderName || latest.title,
+                      })
+                    : null
+                }
+                style={[
+                  styles.latestCard,
+                  { backgroundColor: colors.surface, borderColor: colors.primary + '66' },
+                ]}
+              >
+                <View style={[styles.iconWrapper, { backgroundColor: colors.primary + '15' }]}>
+                  <Ionicons name={latest.icon as any} size={24} color={colors.primary} />
+                </View>
+                <View style={styles.textContainer}>
+                  <Text style={[styles.notifTitle, { color: colors.textPrimary }]}>{latest.title}</Text>
+                  <Text style={[styles.notifDesc, { color: colors.textSecondary }]}>{latest.desc}</Text>
+                </View>
+                <Text style={[styles.timeText, { color: colors.textSecondary }]}>{formatTime(latest.time)}</Text>
+              </Pressable>
+            </View>
+          ) : null
+        }
         renderItem={({ item }) => {
-          const isSelected = selected.has(item.id);
+          if (item.type === 'section') {
+            return (
+              <Text style={[styles.sectionLabel, { color: colors.textSecondary, marginTop: 10 }]}>
+                {item.label}
+              </Text>
+            );
+          }
+
+          const notif = item.item;
+          const isSelected = selected.has(notif.id);
           return (
             <Pressable
-              onPress={() => selectMode ? toggleSelect(item.id) : null}
-              onLongPress={() => !selectMode && enterSelectMode(item.id)}
+              onPress={() => {
+                if (selectMode) {
+                  toggleSelect(notif.id);
+                } else if (notif.senderId) {
+                  navigation.navigate('ChatScreen', {
+                    receiverId: notif.senderId,
+                    receiverName: notif.senderName || notif.title,
+                  });
+                }
+              }}
+              onLongPress={() => !selectMode && enterSelectMode(notif.id)}
               style={[
                 styles.card,
                 {
@@ -221,19 +318,19 @@ export default function ChatNotificationsScreen({ navigation }: any) {
               )}
 
               <View style={[styles.iconWrapper, { backgroundColor: colors.primary + '15' }]}>
-                <Ionicons name={item.icon as any} size={24} color={colors.primary} />
+                <Ionicons name={notif.icon as any} size={24} color={colors.primary} />
               </View>
 
               <View style={styles.textContainer}>
-                <Text style={[styles.notifTitle, { color: colors.textPrimary }]}>{item.title}</Text>
-                <Text style={[styles.notifDesc, { color: colors.textSecondary }]}>{item.desc}</Text>
-                <Text style={[styles.timeText, { color: colors.textSecondary }]}>{formatTime(item.time)}</Text>
+                <Text style={[styles.notifTitle, { color: colors.textPrimary }]}>{notif.title}</Text>
+                <Text style={[styles.notifDesc, { color: colors.textSecondary }]}>{notif.desc}</Text>
+                <Text style={[styles.timeText, { color: colors.textSecondary }]}>{formatTime(notif.time)}</Text>
               </View>
 
               {/* [PUSH-NOTIF] swipe-style delete button (shown when not in select mode) */}
               {!selectMode && (
                 <Pressable
-                  onPress={() => deleteOne(item.id)}
+                  onPress={() => deleteOne(notif.id)}
                   hitSlop={8}
                   style={styles.deleteBtn}
                 >
@@ -259,6 +356,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontFamily: 'DMSans_700Bold' },
   clearText: { fontSize: 14, fontFamily: 'DMSans_700Bold' },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
+  sectionLabel: { fontSize: 11, fontFamily: 'DMSans_700Bold', marginBottom: 8, marginLeft: 2, opacity: 0.8 },
+  latestCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, borderWidth: 1 },
   deleteBar: {
     flexDirection: 'row',
     alignItems: 'center',

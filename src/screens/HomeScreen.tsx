@@ -43,11 +43,19 @@ const TAGS_LIST = [
   'Neutered/Spayed', 'Energetic', 'Calm', 'Playful', 'Friendly', 'Vocal', 'Independent',
 ];
 
-export default function HomeScreen({ navigation }: any) {
+export default function HomeScreen({ navigation, route }: any) {
   const { colors, resetTheme } = useTheme();
   const { refresh: refreshSavedPets } = useSavedPets(); // [SAVED-PETS] re-scope to logged-in user on mount
   
   const [activeTab, setActiveTab] = useState('home'); // [DASHBOARD-REDESIGN]
+
+  useEffect(() => {
+    const requestedTab = route?.params?.initialTab;
+    if (requestedTab === 'messages') {
+      setActiveTab('messages');
+      navigation.setParams?.({ initialTab: undefined });
+    }
+  }, [route?.params?.initialTab]);
 
   // --- POST CREATION STATE ---
   const [postType, setPostType] = useState<'general' | 'adoption'>('general');
@@ -60,6 +68,7 @@ export default function HomeScreen({ navigation }: any) {
     medicalHistory: '', behavior: '', personality: '',
     gender: 'Unknown', weightKg: '', size: 'Medium', tags: [] as string[], // [DASHBOARD-REDESIGN]
   });
+  const [ageUnit, setAgeUnit] = useState('Years'); // [AGE-UNIT] Years or Months
   const petUploader = useImageUploader([]); // [UPLOAD-PROGRESS] multi-image for adoption form
   // [OTHER-CATEGORY] free-text input shown when user selects "Other" as pet category
   const [otherCategoryText, setOtherCategoryText] = useState('');
@@ -96,6 +105,13 @@ export default function HomeScreen({ navigation }: any) {
       fetchProvinces();
     }
   }, []);
+
+  useEffect(() => {
+    // Clear uploaded photos when switching away from home tab
+    if (activeTab !== 'home') {
+      petUploader.clear();
+    }
+  }, [activeTab]);
 
   const handleTabChange = (tab: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -213,7 +229,7 @@ export default function HomeScreen({ navigation }: any) {
         owner_id: userId, category: resolvedCategory,
         image_url: cover, image_urls,                // [DASHBOARD-REDESIGN]
         pet_name: petForm.petName, breed: petForm.breed,
-        age: Number(petForm.age), price: petForm.price ? Number(petForm.price) : 0,
+        age: `${petForm.age} ${ageUnit}`, price: petForm.price ? Number(petForm.price) : 0,
         location: petForm.location, description: petForm.description,
         medical_history: petForm.medicalHistory, behavior: petForm.behavior, personality: petForm.personality,
         gender: petForm.gender.toLowerCase(),        // [DASHBOARD-REDESIGN]
@@ -301,10 +317,13 @@ export default function HomeScreen({ navigation }: any) {
                   <CustomInput label="Pet Name *" placeholder="e.g., Buddy" value={petForm.petName} onChangeText={t => setPetForm({...petForm, petName: t})} />
                   <CustomDropdown label="Breed *" value={petForm.breed} options={getBreedOptions()} onSelect={(val) => setPetForm({...petForm, breed: val})} />
                   
+                  {/* [AGE-UNIT] separate age number and unit dropdowns */}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <View style={{ flex: 1, marginRight: 8 }}><CustomInput label="Age (Years) *" placeholder="e.g., 2" value={petForm.age} onChangeText={t => setPetForm({...petForm, age: t})} keyboardType="numeric" /></View>
-                    <View style={{ flex: 1, marginLeft: 8 }}><CustomInput label="Price (PHP)" placeholder="Leave blank if free" value={petForm.price} onChangeText={t => setPetForm({...petForm, price: t})} keyboardType="numeric" /></View>
+                    <View style={{ flex: 1, marginRight: 8 }}><CustomInput label="Age *" placeholder="e.g., 2" value={petForm.age} onChangeText={t => setPetForm({...petForm, age: t})} keyboardType="numeric" /></View>
+                    <View style={{ flex: 1, marginLeft: 8 }}><CustomDropdown label="Unit" value={ageUnit} options={['Years', 'Months']} onSelect={(val) => setAgeUnit(val)} /></View>
                   </View>
+
+                  <CustomInput label="Price (PHP)" placeholder="Leave blank if free" value={petForm.price} onChangeText={t => setPetForm({...petForm, price: t})} keyboardType="numeric" />
 
                   <View style={styles.autocompleteContainer}>
                     <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>Location (City/Municipality) *</Text>

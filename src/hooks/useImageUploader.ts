@@ -69,9 +69,13 @@ export function useImageUploader(initialUrls: string[] = []) {
 
   const retry = useCallback((uri: string) => uploadOne(uri), [uploadOne]);
 
+  const clear = useCallback(() => {
+    setItems([]);
+  }, []);
+
   const allUploaded = items.length > 0 && items.every((it) => it.status === 'done');
   const anyUploading = items.some((it) => it.status === 'uploading' || it.status === 'pending');
   const urls = items.filter((it) => it.status === 'done' && it.url).map((it) => it.url!);
 
-  return { items, pick, remove, retry, allUploaded, anyUploading, urls, MAX_IMAGES };
+  return { items, pick, remove, retry, clear, allUploaded, anyUploading, urls, MAX_IMAGES };
 }

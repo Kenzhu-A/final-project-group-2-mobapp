@@ -252,13 +252,27 @@ export const api = {
     const response = await fetch(`${BASE_URL}/pets/${petId}`, { method: 'DELETE' });
     if (!response.ok) throw new Error('Failed to delete pet post');
   },
-  deleteMessage: async (messageId: string) => {
-    const response = await fetch(`${BASE_URL}/messages/message/${messageId}`, { method: 'DELETE' });
-    if (!response.ok) throw new Error('Failed to delete message');
+  deleteMessage: async (messageId: string, requesterId?: string) => {
+    const url = requesterId
+      ? `${BASE_URL}/messages/message/${messageId}?requesterId=${encodeURIComponent(requesterId)}`
+      : `${BASE_URL}/messages/message/${messageId}`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Failed to delete message');
   },
-  deleteConversation: async (user1: string, user2: string) => {
-    const response = await fetch(`${BASE_URL}/messages/conversation/${user1}/${user2}`, { method: 'DELETE' });
-    if (!response.ok) throw new Error('Failed to delete conversation');
+  deleteConversation: async (user1: string, user2: string, requesterId?: string) => {
+    const url = requesterId
+      ? `${BASE_URL}/messages/conversation/${user1}/${user2}?requesterId=${encodeURIComponent(requesterId)}`
+      : `${BASE_URL}/messages/conversation/${user1}/${user2}`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Failed to delete conversation');
   },
   // --- LOST AND FOUND API ---
   getLostAndFoundReports: async () => {
@@ -352,14 +366,15 @@ export const api = {
     if (!response.ok) throw new Error('Failed to fetch conversations');
     return await response.json();
   },
-  editMessage: async (messageId: string, text: string) => {
+  editMessage: async (messageId: string, text: string, requesterId?: string) => {
     const response = await fetch(`${BASE_URL}/messages/message/${messageId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify(requesterId ? { text, requesterId } : { text }),
     });
-    if (!response.ok) throw new Error('Failed to edit message');
-    return await response.json();
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Failed to edit message');
+    return data;
   },
   getPetDetails: async (petId: string) => {
     const response = await fetch(`${BASE_URL}/pets/${petId}`);
