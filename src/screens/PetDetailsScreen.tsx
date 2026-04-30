@@ -8,8 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
-import PrimaryButton from '../components/PrimaryButton';
 import { useSavedPets } from '../hooks/useSavedPets';
+import ReportModal from '../components/ReportModal'; // [REPORTS]
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -23,6 +23,7 @@ export default function PetDetailsScreen({ route, navigation }: any) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [pageIdx, setPageIdx] = useState(0);
   const [readMore, setReadMore] = useState(false);
+  const [showReport, setShowReport] = useState(false); // [REPORTS]
 
   // [LIKED-POSTS] like state
   const [isLiked, setIsLiked] = useState(false);
@@ -161,9 +162,22 @@ export default function PetDetailsScreen({ route, navigation }: any) {
                 </Text>
               )}
             </View>
-            <View style={[styles.statusBadge, { borderColor: statusColor }]}>
-              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-              <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
+            <View style={{ alignItems: 'flex-end', gap: 8 }}>
+              <View style={[styles.statusBadge, { borderColor: statusColor }]}>
+                <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
+              </View>
+              {/* [REPORTS] flag button — only visible for listings the user does not own */}
+              {currentUserId && currentUserId !== pet.owner_id && (
+                <Pressable
+                  onPress={() => setShowReport(true)}
+                  style={[styles.reportBtn, { backgroundColor: '#FFF0EE', borderColor: '#FFCCBC' }]}
+                  hitSlop={8}
+                >
+                  <Ionicons name="flag-outline" size={14} color={colors.accent} />
+                  <Text style={[styles.reportBtnText, { color: colors.accent }]}>Report</Text>
+                </Pressable>
+              )}
             </View>
           </View>
 
@@ -283,6 +297,17 @@ export default function PetDetailsScreen({ route, navigation }: any) {
           </View>
         </View>
       </ScrollView>
+
+      {/* [REPORTS] report modal — mounted at screen level so it overlays the full screen */}
+      {pet && (
+        <ReportModal
+          visible={showReport}
+          onClose={() => setShowReport(false)}
+          reportType="pet_post"
+          itemId={String(pet.id)}
+          reporterId={currentUserId || ''}
+        />
+      )}
     </View>
   );
 }
@@ -321,4 +346,7 @@ const styles = StyleSheet.create({
   feeValue: { fontSize: 24, fontFamily: 'DMSans_700Bold', marginTop: 2 },
   applyBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 24, gap: 4 },
   applyText: { color: '#FFF', fontSize: 14, fontFamily: 'DMSans_700Bold' },
+  // [REPORTS]
+  reportBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, borderWidth: 1 },
+  reportBtnText: { fontSize: 11, fontFamily: 'DMSans_700Bold' },
 });

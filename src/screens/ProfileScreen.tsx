@@ -114,7 +114,8 @@ export default function ProfileScreen({ navigation, handleSignOut, setActiveTab 
       </View>
 
       <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        
+
+        {/* My Pets — manage adopted/available status and remove listings */}
         <Pressable style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('MyPetsScreen')}>
           <View style={styles.menuLeft}>
             <View style={[styles.iconWrapper, { backgroundColor: colors.background }]}>
@@ -124,7 +125,8 @@ export default function ProfileScreen({ navigation, handleSignOut, setActiveTab 
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
         </Pressable>
-        {/* My Listings */}
+
+        {/* My Listings — edit or delete adoption posts */}
         <Pressable style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('MyListingsScreen')}>
           <View style={styles.menuLeft}>
             <View style={[styles.iconWrapper, { backgroundColor: colors.background }]}>
@@ -169,7 +171,20 @@ export default function ProfileScreen({ navigation, handleSignOut, setActiveTab 
         </Pressable>
       </View>
 
-      <Pressable style={styles.logoutButton} onPress={handleSignOut}>
+      {/* [PROFILE] logout with confirmation dialog */}
+      <Pressable
+        style={styles.logoutButton}
+        onPress={() =>
+          Alert.alert(
+            'Log Out',
+            'Are you sure you want to log out?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Log Out', style: 'destructive', onPress: handleSignOut },
+            ],
+          )
+        }
+      >
         <Ionicons name="log-out-outline" size={22} color="#D32F2F" style={styles.logoutIcon} />
         <Text style={styles.logoutText}>Log Out</Text>
       </Pressable>

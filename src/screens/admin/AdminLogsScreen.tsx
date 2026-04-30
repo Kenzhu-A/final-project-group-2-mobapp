@@ -1,11 +1,14 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿// [ADMIN] activity logs — view latest 100 system/user action logs
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api';
 
 export default function AdminLogsScreen({ navigation }: any) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -14,13 +17,12 @@ export default function AdminLogsScreen({ navigation }: any) {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <Pressable onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
+      <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 8 }]}>
+        <Pressable onPress={() => navigation.goBack()} style={{ padding: 4, marginRight: 12 }}>
+          <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Activity Logs</Text>
-        <View style={{ width: 32 }} />
       </View>
 
       {loading ? (
@@ -48,13 +50,13 @@ export default function AdminLogsScreen({ navigation }: any) {
           )}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
+  safe: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingBottom: 16, borderBottomWidth: 1 },
   headerTitle: { fontSize: 18, fontFamily: 'DMSans_700Bold' },
   logCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, borderWidth: 1, marginBottom: 12 },
   iconBox: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 16 },

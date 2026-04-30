@@ -7,6 +7,8 @@ import Slider from '@react-native-community/slider';
 import { useTheme } from '../context/ThemeContext';
 
 const SPECIES = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Other'];
+// [OTHER-CATEGORY] anything outside standard list is treated as "Other"
+const STANDARD_CATS = ['Dog', 'Cat', 'Bird', 'Rabbit'];
 const SIZES = [
   { key: 'small',  label: 'Small'  },
   { key: 'medium', label: 'Medium' },
@@ -46,7 +48,13 @@ export default function FilterScreen({ route, navigation }: any) {
 
   const previewCount = useMemo(() => {
     return allPets.filter((p) => {
-      if (species.length && !species.includes(p.category)) return false;
+      // [OTHER-CATEGORY] 'Other' matches any non-standard category
+      if (species.length) {
+        const matched = species.some((s) =>
+          s === 'Other' ? !STANDARD_CATS.includes(p.category) : p.category === s
+        );
+        if (!matched) return false;
+      }
       if (size.length && !size.includes(p.size)) return false;
       if (maxPrice < 50000 && (p.price ?? 0) > maxPrice) return false;
       if (city && !(p.location || '').toLowerCase().includes(city.toLowerCase())) return false;
