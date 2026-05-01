@@ -32,7 +32,8 @@ export default function AdminUserConversationsScreen({ route, navigation }: any)
 
   const load = useCallback(async () => {
     try {
-      const data = await api.getConversations(userId);
+      // [ADMIN-CONVO-INSPECT] Use admin endpoint to inspect user conversations
+      const data = await api.getUserConversations(userId);
       setConversations(data || []);
     } catch (e) {
       console.error('[ADMIN-MESSAGES] conversations load failed', e);
@@ -56,7 +57,8 @@ export default function AdminUserConversationsScreen({ route, navigation }: any)
           text: 'Delete', style: 'destructive',
           onPress: async () => {
             try {
-              await api.deleteConversation(userId, partnerId);
+              // [USER-REPORT-MODERATION] Admin delete removes the conversation for both participants.
+              await api.deleteConversationForAll(userId, partnerId);
               setConversations((prev) => prev.filter((c) => c.partnerId !== partnerId));
             } catch (e: any) {
               Alert.alert('Error', e.message || 'Could not delete conversation.');

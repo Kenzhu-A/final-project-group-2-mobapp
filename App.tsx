@@ -26,6 +26,7 @@ import ChatNotifications from './src/screens/ChatNotificationsScreen';
 
 import MyPostsScreen from './src/screens/MyPostsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import EditPostScreen from './src/screens/EditPostScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
 import ChangeForgotPasswordScreen from './src/screens/ChangeForgotPasswordScreen';
@@ -165,6 +166,7 @@ export default function App() {
               <Stack.Screen name="ChatScreen" component={ChatScreen} />
 
               <Stack.Screen name="MyPostsScreen" component={MyPostsScreen} />
+              <Stack.Screen name="EditPost" component={EditPostScreen} />
               <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
               <Stack.Screen name="EditProfile" component={EditProfileScreen} />
               <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />

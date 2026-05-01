@@ -1,5 +1,5 @@
 ﻿// [DASHBOARD-REDESIGN] enriched pet detail — carousel, pills, save heart, like, share, apply-to-adopt
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, Image, ScrollView, Pressable,
   ActivityIndicator, FlatList, Dimensions, Share,
@@ -12,6 +12,7 @@ import { useSavedPets } from '../hooks/useSavedPets';
 import ReportModal from '../components/ReportModal'; // [REPORTS]
 
 const { width: SCREEN_W } = Dimensions.get('window');
+const AUTO_SLIDE_INTERVAL_MS = 20_000; // [AUTO-SLIDE] 20 seconds
 
 export default function PetDetailsScreen({ route, navigation }: any) {
   const { petId } = route.params;
@@ -29,6 +30,10 @@ export default function PetDetailsScreen({ route, navigation }: any) {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
 
+  // [AUTO-SLIDE] carousel refs and state
+  const flatListRef = useRef<FlatList>(null);
+  const isScrollingRef = useRef(false);
+
   useEffect(() => {
     (async () => {
       try {
@@ -45,6 +50,22 @@ export default function PetDetailsScreen({ route, navigation }: any) {
       finally { setLoading(false); }
     })();
   }, [petId]);
+
+  // [AUTO-SLIDE] auto-advance carousel every 30 seconds
+  useEffect(() => {
+    if (!pet || !pet.image_urls || pet.image_urls.length <= 1) return;
+    const images = pet.image_urls.length > 0 ? pet.image_urls : pet.image_url ? [pet.image_url] : [];
+    if (images.length < 2) return;
+
+    const id = setInterval(() => {
+      if (isScrollingRef.current) return;
+      const next = (pageIdx + 1) % images.length;
+      flatListRef.current?.scrollToIndex({ index: next, animated: true });
+      setPageIdx(next);
+    }, AUTO_SLIDE_INTERVAL_MS);
+
+    return () => clearInterval(id);
+  }, [pet, pageIdx]);
 
   if (loading || !pet) {
     return (
@@ -105,12 +126,17 @@ export default function PetDetailsScreen({ route, navigation }: any) {
         <View style={styles.imageWrap}>
           {images.length > 0 ? (
             <FlatList
+              ref={flatListRef}
               data={images}
               keyExtractor={(u, i) => `${i}-${u}`}
               horizontal pagingEnabled showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={(e) =>
-                setPageIdx(Math.round(e.nativeEvent.contentOffset.x / SCREEN_W))
-              }
+              onMomentumScrollEnd={(e) => {
+                const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
+                setPageIdx(idx);
+                isScrollingRef.current = false; // [AUTO-SLIDE]
+              }}
+              onScrollBeginDrag={() => { isScrollingRef.current = true; }} // [AUTO-SLIDE]
+              scrollEventThrottle={16}
               renderItem={({ item }) => <Image source={{ uri: item }} style={styles.heroImage} />}
             />
           ) : (
@@ -132,15 +158,14 @@ export default function PetDetailsScreen({ route, navigation }: any) {
               <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={20} color={isLiked ? '#EF4444' : '#000'} />
             </Pressable>
             <Pressable style={styles.iconCircle} onPress={onToggleSave}>
-              <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={20} color={isSaved ? '#FBBF24' : '#000'} />
+              <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={20} color={isSaved ? '#F5A623' : '#000'} />
             </Pressable>
           </View>
 
+          {/* [AUTO-SLIDE] number indicator on right side */}
           {images.length > 1 && (
-            <View style={styles.dots}>
-              {images.map((_, i) => (
-                <View key={i} style={[styles.dot, { backgroundColor: i === pageIdx ? '#FFF' : 'rgba(255,255,255,0.5)' }]} />
-              ))}
+            <View style={styles.pageIndicator}>
+              <Text style={styles.pageIndicatorText}>{pageIdx + 1} / {images.length}</Text>
             </View>
           )}
         </View>
@@ -320,8 +345,8 @@ const styles = StyleSheet.create({
   backBtn: { position: 'absolute', top: 50, left: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.85)', justifyContent: 'center', alignItems: 'center' },
   topRightActions: { position: 'absolute', top: 50, right: 16, flexDirection: 'row', gap: 8 },
   iconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.85)', justifyContent: 'center', alignItems: 'center' },
-  dots: { position: 'absolute', bottom: 14, alignSelf: 'center', flexDirection: 'row', gap: 6 },
-  dot: { width: 6, height: 6, borderRadius: 3 },
+  pageIndicator: { position: 'absolute', bottom: 33, right: 16, backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  pageIndicatorText: { color: '#FFF', fontFamily: 'DMSans_700Bold', fontSize: 13 },
   content: { padding: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: -24 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 },
   name: { fontSize: 28, fontFamily: 'DMSerifDisplay_400Regular' },

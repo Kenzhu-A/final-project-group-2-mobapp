@@ -52,6 +52,8 @@ export default function ChatScreen({ route, navigation }: any) {
   // Message Options State
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [showChatMenu, setShowChatMenu] = useState(false); // [CHAT-MENU] options for report/delete
+  const [showReportUserModal, setShowReportUserModal] = useState(false); // [CHAT-MENU]
   const [showDeleteConversationModal, setShowDeleteConversationModal] =
     useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -374,7 +376,7 @@ export default function ChatScreen({ route, navigation }: any) {
           {receiverName}
         </Text>
         <Pressable
-          onPress={() => setShowDeleteConversationModal(true)}
+          onPress={() => setShowChatMenu(true)}
           style={styles.optionsBtn}
         >
           <Ionicons

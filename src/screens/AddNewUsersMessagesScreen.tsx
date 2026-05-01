@@ -29,7 +29,7 @@ export default function AddNewUsersMessages({ navigation }: any) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         <Pressable onPress={() => navigation.goBack()} style={{ padding: 4 }}>
           <Ionicons name="close" size={28} color={colors.textPrimary} />
         </Pressable>

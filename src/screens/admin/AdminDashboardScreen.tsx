@@ -124,19 +124,7 @@ export default function AdminDashboardScreen() {
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
         </Pressable>
 
-        <Pressable
-          style={[styles.menuRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => navigation.navigate('AdminLogsScreen')}
-        >
-          <View style={[styles.menuIcon, { backgroundColor: colors.primary + '15' }]}>
-            <Ionicons name="list" size={22} color={colors.primary} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>View Activity Logs</Text>
-            <Text style={[styles.menuDesc, { color: colors.textSecondary }]}>Monitor system and user actions</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </Pressable>
+        {/* [USER-REPORT-MODERATION] Removed inactive activity-log shortcut; logs currently have no write path. */}
 
         <Pressable
           style={[styles.menuRow, { backgroundColor: colors.surface, borderColor: colors.border }]}

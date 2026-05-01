@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, marginBottom: 4, fontFamily: 'DMSerifDisplay_400Regular' },
   subtitle: { fontSize: 15, fontFamily: 'DMSans_400Regular' },
   form: { marginBottom: 16 },
-  footer: { marginTop: 'auto', paddingBottom: 16 },
+  footer: { marginTop: 'auto', paddingBottom: 100 },
   loginRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 8 },
   footerText: { fontSize: 14, fontFamily: 'DMSans_400Regular' },
   loginText: { fontSize: 14, fontFamily: 'DMSans_700Bold' },

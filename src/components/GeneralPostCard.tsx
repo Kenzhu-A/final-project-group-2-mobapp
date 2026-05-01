@@ -142,7 +142,11 @@ export default function GeneralPostCard({ item, colors, onUnsave }: any) {
           </Pressable>
         </View>
         <Pressable onPress={toggleSave}>
-          <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} size={26} color={colors.textPrimary} />
+           <Ionicons
+    name={isSaved ? "bookmark" : "bookmark-outline"}
+    size={26}
+    color={isSaved ? "#F5A623" : colors.textPrimary}  
+  />
         </Pressable>
       </View>
 

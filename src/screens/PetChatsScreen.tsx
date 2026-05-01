@@ -68,46 +68,82 @@ export default function PetChatsScreen({ navigation, onChatEnter }: any) {
 
     socket.emit("register", currentUserId);
 
-    socket.on("receive_message", (newMessage: any) => {
-      // newMessage shape from backend: { id, sender_id, receiver_id, text, created_at, ... }
-      const partnerId =
-        newMessage.sender_id === currentUserId
-          ? newMessage.receiver_id
-          : newMessage.sender_id;
+   socket.on("receive_message", async (newMessage: any) => {
+  const partnerId =
+    newMessage.sender_id === currentUserId
+      ? newMessage.receiver_id
+      : newMessage.sender_id;
 
-      setConversations((prev) => {
-        const next = [...prev];
-        const idx = next.findIndex((c) => c.partnerId === partnerId);
-        const updated = {
-          ...(idx >= 0 ? next[idx] : { partnerId }),
+  // Capture whether this partner already exists BEFORE any setState
+  setConversations((prev) => {
+    const idx = prev.findIndex((c) => c.partnerId === partnerId);
+    if (idx < 0) return prev; // new convo — handled async below
+
+    const next = [...prev];
+    const updated = {
+      ...next[idx],
+      latestMessage: newMessage.text,
+      createdAt: newMessage.created_at,
+    };
+    next.splice(idx, 1);
+    return [updated, ...next];
+  });
+
+  // ✅ Use functional read to check live state
+  const isNewConversation = await new Promise<boolean>((resolve) => {
+    setConversations((prev) => {
+      resolve(prev.findIndex((c) => c.partnerId === partnerId) < 0);
+      return prev; // no-op setter just to read state
+    });
+  });
+
+  if (isNewConversation) {
+    try {
+      const updatedConversations = await api.getConversations(currentUserId!);
+      setConversations(updatedConversations);
+    } catch (e) {
+      try {
+        const partner = await api.getUserProfile(partnerId);
+        setConversations((prev) => [{
+          partnerId,
+          partnerName: partner?.full_name || partner?.email || 'Unknown User',
+          partnerAvatar: partner?.avatar_url || null,
           latestMessage: newMessage.text,
           createdAt: newMessage.created_at,
-        };
-
-        // If we don't have a conversation entry yet, refresh from server to get name/avatar.
-        if (idx < 0) {
-          api
-            .getConversations(currentUserId)
-            .then(setConversations)
-            .catch(() => {});
-          return prev;
-        }
-
-        next.splice(idx, 1);
-        return [updated, ...next];
-      });
-
-      // If message is from someone else, mark this conversation as read so it doesn't show unread
-      if (newMessage.sender_id !== currentUserId) {
-        const markAsRead = async () => {
-          const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
-          const readMap = readRaw ? JSON.parse(readRaw) : {};
-          readMap[partnerId] = new Date().toISOString();
-          await AsyncStorage.setItem(CHAT_READ_KEY, JSON.stringify(readMap));
-          setReadMap(readMap);
-        };
-        markAsRead().catch(() => {});
+          messageCount: 1,
+        }, ...prev]);
+      } catch {
+        setConversations((prev) => [{
+          partnerId,
+          partnerName: 'Unknown User',
+          partnerAvatar: null,
+          latestMessage: newMessage.text,
+          createdAt: newMessage.created_at,
+          messageCount: 1,
+        }, ...prev]);
       }
+    }
+  }
+
+  if (newMessage.sender_id !== currentUserId) {
+    try {
+      const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
+      const map = readRaw ? JSON.parse(readRaw) : {};
+      map[partnerId] = new Date().toISOString();
+      await AsyncStorage.setItem(CHAT_READ_KEY, JSON.stringify(map));
+      setReadMap(map);
+    } catch {}
+  }
+});
+
+    // [CONVERSATION-DELETE-FIX] Listen for conversation deletion events
+    socket.on("conversation_deleted", (payload: any) => {
+      const { user1, user2, deletedBy } = payload;
+      if (deletedBy !== currentUserId) return; // Only handle deletions by current user
+
+      // Remove the deleted conversation from the list
+      const partnerId = user1 === currentUserId ? user2 : user1;
+      setConversations((prev) => prev.filter((c) => c.partnerId !== partnerId));
     });
 
     return () => {
@@ -248,6 +284,8 @@ export default function PetChatsScreen({ navigation, onChatEnter }: any) {
         <FlatList
           data={filteredConversations}
           keyExtractor={(item) => item.partnerId}
+          initialNumToRender={20}
+  removeClippedSubviews={false}
           contentContainerStyle={{
             paddingBottom: 110,
             paddingHorizontal: 16,
@@ -291,6 +329,7 @@ export default function PetChatsScreen({ navigation, onChatEnter }: any) {
               }}
             >
               <Image
+                 key={item.partnerAvatar || item.partnerId}
                 source={
                   item.partnerAvatar
                     ? { uri: item.partnerAvatar }

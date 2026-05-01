@@ -101,7 +101,7 @@ export default function MyPetsScreen({ navigation }: any) {
 
               <View style={styles.actionColumn}>
                 <Pressable 
-                  style={[styles.toggleBtn, { borderColor: item.status === 'available' ? colors.border : colors.primary, backgroundColor: item.status === 'available' ? colors.background : colors.primary + '15' }]} 
+                  style={[styles.toggleBtn, { borderColor: item.status === 'available' ? colors.border : colors.primary, backgroundColor: item.status === 'available' ? colors.surface : colors.primary + '15' }]} 
                   onPress={() => toggleStatus(item)}
                 >
                   <Text style={[styles.toggleBtnText, { color: item.status === 'available' ? colors.textPrimary : colors.primary }]}>

@@ -1,11 +1,11 @@
 import { Platform } from 'react-native';
 
 // Dynamically grab the correct URL from the .env file based on the device
-export const BASE_URL = Platform.OS === 'android' 
-  ? process.env.EXPO_PUBLIC_API_URL_ANDROID 
+export const BASE_URL = Platform.OS === 'android'
+  ? process.env.EXPO_PUBLIC_API_URL_ANDROID
   : process.env.EXPO_PUBLIC_API_URL_IOS;
 
-  console.log("MY API URL IS:", BASE_URL);
+console.log("MY API URL IS:", BASE_URL);
 
 export const api = {
   // 1. Standard Login
@@ -232,6 +232,15 @@ export const api = {
     const response = await fetch(`${BASE_URL}/posts/${postId}`, { method: 'DELETE' });
     if (!response.ok) throw new Error('Failed to delete post');
   },
+  updateGeneralPost: async (postId: string, postData: any) => {
+    const response = await fetch(`${BASE_URL}/posts/${postId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(postData),
+    });
+    if (!response.ok) throw new Error('Failed to update post');
+    return await response.json();
+  },
   deletePetPost: async (petId: string) => {
     const response = await fetch(`${BASE_URL}/pets/${petId}`, { method: 'DELETE' });
     if (!response.ok) throw new Error('Failed to delete pet post');
@@ -257,6 +266,17 @@ export const api = {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Failed to delete conversation');
+  },
+  deleteConversationForAll: async (user1: string, user2: string) => {
+    // [USER-REPORT-MODERATION] Admin-only moderation action removes the full thread for both users.
+    const response = await fetch(`${BASE_URL}/messages/conversation/${user1}/${user2}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scope: 'all' }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Failed to delete conversation');
+    return data;
   },
   // --- LOST AND FOUND API ---
   getLostAndFoundReports: async () => {
@@ -345,8 +365,10 @@ export const api = {
     if (!response.ok) throw new Error('Failed to delete reported content');
   },
 
-  getConversations: async (userId: string) => {
-    const response = await fetch(`${BASE_URL}/messages/conversations/${userId}`);
+  getConversations: async (userId: string, options?: { includeDeleted?: boolean }) => {
+    // [USER-REPORT-MODERATION] Admin inspect can request raw conversation summaries, including user-hidden threads.
+    const query = options?.includeDeleted ? '?includeDeleted=true' : '';
+    const response = await fetch(`${BASE_URL}/messages/conversations/${userId}${query}`);
     if (!response.ok) throw new Error('Failed to fetch conversations');
     return await response.json();
   },
@@ -483,6 +505,18 @@ export const api = {
     });
     if (!response.ok) throw new Error('Failed to update pet like');
     return await response.json(); // { likes_count: number }
+  },
+
+  // [ADMIN-CONVO-INSPECT] admin conversation inspection methods
+  getUserConversations: async (userId: string) => {
+    const response = await fetch(`${BASE_URL}/admin/users/${userId}/conversations`);
+    if (!response.ok) throw new Error('Failed to fetch user conversations');
+    return await response.json();
+  },
+  getConversationMessages: async (userId1: string, userId2: string) => {
+    const response = await fetch(`${BASE_URL}/admin/conversations/${userId1}/${userId2}`);
+    if (!response.ok) throw new Error('Failed to fetch conversation messages');
+    return await response.json();
   },
 };
 

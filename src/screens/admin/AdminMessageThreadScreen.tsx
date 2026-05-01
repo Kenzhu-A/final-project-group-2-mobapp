@@ -19,7 +19,7 @@ function formatTime(iso: string): string {
 }
 
 export default function AdminMessageThreadScreen({ route, navigation }: any) {
-  const { user1, user1Name, user2, user2Name } = route.params;
+  const { user1, user1Name, user2, user2Name, reportId } = route.params;
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -29,7 +29,8 @@ export default function AdminMessageThreadScreen({ route, navigation }: any) {
 
   const load = useCallback(async () => {
     try {
-      const data = await api.getMessages(user1, user2);
+      // [ADMIN-CONVO-INSPECT] Use admin endpoint to get full conversation
+      const data = await api.getConversationMessages(user1, user2);
       setMessages(data || []);
     } catch (e) {
       console.error('[ADMIN-MESSAGES] thread load failed', e);
@@ -75,7 +76,10 @@ export default function AdminMessageThreadScreen({ route, navigation }: any) {
           text: 'Delete All', style: 'destructive',
           onPress: async () => {
             try {
-              await api.deleteConversation(user1, user2);
+              // [USER-REPORT-MODERATION] Admin delete removes the conversation for both participants.
+              await api.deleteConversationForAll(user1, user2);
+              // [USER-REPORT-MODERATION] A reviewed user report is resolved once its conversation is deleted.
+              if (reportId) await api.dismissReport(reportId);
               setMessages([]);
               navigation.goBack();
             } catch (e: any) {
@@ -90,7 +94,7 @@ export default function AdminMessageThreadScreen({ route, navigation }: any) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
       {/* header */}
-      <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface, paddingTop: insets.top + 8 }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.background, paddingTop: insets.top + 8 }]}>
         <Pressable onPress={() => navigation.goBack()} style={{ padding: 4, marginRight: 4 }}>
           <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
         </Pressable>
@@ -108,7 +112,7 @@ export default function AdminMessageThreadScreen({ route, navigation }: any) {
           style={[styles.deleteThreadBtn, { backgroundColor: '#FDECEA' }]}
         >
           <Ionicons name="trash-outline" size={16} color="#D32F2F" />
-          <Text style={styles.deleteThreadText}>Clear</Text>
+          <Text style={styles.deleteThreadText} numberOfLines={1}>Delete Conversation</Text>
         </Pressable>
       </View>
 
@@ -116,7 +120,7 @@ export default function AdminMessageThreadScreen({ route, navigation }: any) {
       <View style={[styles.banner, { backgroundColor: colors.primary + '12', borderColor: colors.primary + '30' }]}>
         <Ionicons name="shield-checkmark-outline" size={14} color={colors.primary} />
         <Text style={[styles.bannerText, { color: colors.primary }]}>
-          Admin view — tap the trash icon on any message to remove it.
+          Admin view — review messages before clearing the conversation for both users.
         </Text>
       </View>
 
@@ -131,7 +135,7 @@ export default function AdminMessageThreadScreen({ route, navigation }: any) {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="chatbubble-outline" size={56} color={colors.border} />
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No messages.</Text>
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No messages found for this conversation.</Text>
             </View>
           }
           renderItem={({ item }) => {
@@ -185,7 +189,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 16, fontFamily: 'DMSans_700Bold' },
   headerSub: { fontSize: 11, fontFamily: 'DMSans_400Regular', marginTop: 1 },
-  deleteThreadBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, gap: 4 },
+  deleteThreadBtn: { flexDirection: 'row', alignItems: 'center', maxWidth: 150, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, gap: 4 },
   deleteThreadText: { fontSize: 12, fontFamily: 'DMSans_700Bold', color: '#D32F2F' },
   banner: {
     flexDirection: 'row', alignItems: 'center', gap: 6,

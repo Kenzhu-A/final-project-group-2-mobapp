@@ -68,8 +68,8 @@ export default function PetCard({ pet, onPress }: Props) {
           </View>
         )}
         <Pressable style={styles.bookmarkBtn} onPress={onBookmark} hitSlop={8}>
-          <View style={[styles.bookmarkBg, { backgroundColor: isSaved ? '#FBBF24' : 'rgba(255,255,255,0.85)' }]}>
-            <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={16} color={isSaved ? '#FFF' : '#212529'} />
+          <View style={[styles.bookmarkBg, { backgroundColor: isSaved ? 'rgba(255, 255, 255, 0.50)' : 'rgba(255, 255, 255, 0.50)' }]}>
+            <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={16} color={isSaved ? '#FBBF24' : '#212529'} />
           </View>
         </Pressable>
       </View>
