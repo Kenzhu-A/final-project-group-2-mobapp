@@ -55,7 +55,7 @@ export default function AdminMessagesScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.textPrimary }]}>Messages</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>View all user conversations and perform moderation actions</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>View all user conversations and decide on moderation actions</Text>
       </View>
 
       <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -112,33 +112,6 @@ export default function AdminMessagesScreen() {
               >
                 <Text style={[styles.inspectText, { color: colors.primary }]}>View</Text>
                 <Ionicons name="eye-outline" size={14} color={colors.primary} />
-              </Pressable>
-              <Pressable
-                style={[styles.inspectBtn, { backgroundColor: '#FDECEA' }]}
-                onPress={() => {
-                  Alert.alert(
-                    'Delete Conversation',
-                    `Delete all messages between ${item.user1Name} and ${item.user2Name}? This cannot be undone.`,
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      {
-                        text: 'Delete',
-                        style: 'destructive',
-                        onPress: async () => {
-                          try {
-                            await api.deleteConversationForAll(item.user1Id, item.user2Id);
-                            setConversations((prev) => prev.filter((c) => c.id !== item.id));
-                          } catch (e: any) {
-                            Alert.alert('Error', e.message || 'Could not delete conversation.');
-                          }
-                        },
-                      },
-                    ],
-                  );
-                }}
-              >
-                <Text style={[styles.inspectText, { color: '#D32F2F' }]}>Delete</Text>
-                <Ionicons name="trash-outline" size={14} color="#D32F2F" />
               </Pressable>
             </View>
           </View>

@@ -77,14 +77,6 @@ export default function SettingsScreen({ navigation }: any) {
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </Pressable>
 
-          <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
-            <View style={styles.menuLeft}>
-              <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} style={styles.menuIcon} />
-              <Text style={[styles.menuText, { color: colors.textPrimary }]}>Push Notifications</Text>
-            </View>
-            <Switch value={pushEnabled} onValueChange={handleTogglePush} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={'#FFF'} />
-          </View>
-
           <View style={[styles.menuItem, { borderBottomWidth: 0 }]}>
             <View style={styles.menuLeft}>
               <Ionicons name="moon-outline" size={22} color={colors.textPrimary} style={styles.menuIcon} />

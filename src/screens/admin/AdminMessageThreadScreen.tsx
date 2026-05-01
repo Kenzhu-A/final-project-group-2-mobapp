@@ -106,14 +106,6 @@ export default function AdminMessageThreadScreen({ route, navigation }: any) {
             {messages.length} message{messages.length !== 1 ? 's' : ''}
           </Text>
         </View>
-        {/* [ADMIN-MESSAGES] delete entire thread from header */}
-        <Pressable
-          onPress={handleDeleteThread}
-          style={[styles.deleteThreadBtn, { backgroundColor: '#FDECEA' }]}
-        >
-          <Ionicons name="trash-outline" size={16} color="#D32F2F" />
-          <Text style={styles.deleteThreadText} numberOfLines={1}>Delete Conversation</Text>
-        </Pressable>
       </View>
 
       {/* [ADMIN-MESSAGES] info banner */}
@@ -166,11 +158,6 @@ export default function AdminMessageThreadScreen({ route, navigation }: any) {
                       {formatTime(item.created_at)}
                     </Text>
                   </View>
-                  {isSenderUser1 && (
-                    <Pressable onPress={() => handleDeleteMessage(item.id)} style={styles.deleteBtn} hitSlop={8}>
-                      <Ionicons name="trash-outline" size={15} color="#D32F2F" />
-                    </Pressable>
-                  )}
                 </View>
               </View>
             );
