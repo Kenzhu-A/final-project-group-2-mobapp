@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { useTheme } from '../context/ThemeContext';
-import { api } from '../services/api';
+import { useTheme } from '../../context/ThemeContext';
+import { api } from '../../services/api';
 
 interface ProfileProps {
   navigation: any;

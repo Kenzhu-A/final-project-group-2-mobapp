@@ -9,13 +9,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { io, Socket } from 'socket.io-client';
 
-import { useTheme } from '../context/ThemeContext';
-import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { api, BASE_URL } from '../services/api';
+import { useTheme } from '../../context/ThemeContext';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { api, BASE_URL } from '../../services/api';
 import { pushLocalNotification } from './ChatNotificationsScreen'; // [ANNOUNCEMENTS]
-import PetCard from '../components/PetCard';
-import HeroCarousel from '../components/HeroCarousel';
-import GeneralPostCard from '../components/GeneralPostCard'; // [COMMUNITY-FEED]
+import PetCard from '../../components/PetCard';
+import HeroCarousel from '../../components/HeroCarousel';
+import GeneralPostCard from '../../components/GeneralPostCard'; // [COMMUNITY-FEED]
 
 const SOCKET_URL = BASE_URL.replace('/api', '');
 const CATEGORY_OPTIONS = [

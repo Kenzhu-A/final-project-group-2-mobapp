@@ -7,22 +7,22 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { io, Socket } from 'socket.io-client';
 
-import BottomNavBar from '../components/BottomNavBar';
-import CustomInput from '../components/CustomInput';
-import CustomDropdown from '../components/CustomDropdown';
-import PrimaryButton from '../components/PrimaryButton';
-import { useImageUploader } from '../hooks/useImageUploader'; // [UPLOAD-PROGRESS]
-import UploadingImageTile from '../components/UploadingImageTile'; // [UPLOAD-PROGRESS]
+import BottomNavBar from '../../components/BottomNavBar';
+import CustomInput from '../../components/CustomInput';
+import CustomDropdown from '../../components/CustomDropdown';
+import PrimaryButton from '../../components/PrimaryButton';
+import { useImageUploader } from '../../hooks/useImageUploader'; // [UPLOAD-PROGRESS]
+import UploadingImageTile from '../../components/UploadingImageTile'; // [UPLOAD-PROGRESS]
 
 import ProfileScreen from './ProfileScreen';
 import PetChatsScreen from './PetChatsScreen';
 // [DASHBOARD-REDESIGN] new tab screens
-import DashboardScreen from './DashboardScreen';
+import DashboardScreen from '../user/DashboardScreen';
 import SavedPetsScreen from './SavedPetsScreen';
 
-import { useTheme } from '../context/ThemeContext';
-import { api, BASE_URL } from '../services/api';
-import { useSavedPets } from '../hooks/useSavedPets'; // [SAVED-PETS]
+import { useTheme } from '../../context/ThemeContext';
+import { api, BASE_URL } from '../../services/api';
+import { useSavedPets } from '../../hooks/useSavedPets'; // [SAVED-PETS]
 
 const SOCKET_URL = BASE_URL.replace('/api', '');
 const CHAT_READ_KEY = 'snoutscout_chat_read_map';

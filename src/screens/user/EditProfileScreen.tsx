@@ -5,10 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
-import CustomInput from '../components/CustomInput';
-import PrimaryButton from '../components/PrimaryButton';
-import { useTheme } from '../context/ThemeContext';
-import { api } from '../services/api';
+import CustomInput from '../../components/CustomInput';
+import PrimaryButton from '../../components/PrimaryButton';
+import { useTheme } from '../../context/ThemeContext';
+import { api } from '../../services/api';
 
 export default function EditProfileScreen({ navigation }: any) {
   const { colors } = useTheme();

@@ -19,8 +19,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { io, Socket } from "socket.io-client";
-import { useTheme } from "../context/ThemeContext";
-import { api, BASE_URL } from "../services/api";
+import { useTheme } from "../../context/ThemeContext";
+import { api, BASE_URL } from "../../services/api";
 
 const CHAT_READ_KEY = "snoutscout_chat_read_map";
 const SOCKET_URL = BASE_URL.replace("/api", "");

@@ -12,35 +12,35 @@ import { ThemeProvider } from './src/context/ThemeContext';
 import { SavedPetsProvider } from './src/hooks/useSavedPets'; // [SAVED-PETS]
 import { api } from './src/services/api'; // [PUSH-NOTIF]
 import { registerForPushNotificationsAsync } from './src/utils/notifications'; // [PUSH-NOTIF]
-import { pushLocalNotification } from './src/screens/ChatNotificationsScreen'; // [ANNOUNCEMENTS]
+import { pushLocalNotification } from './src/screens/user/ChatNotificationsScreen'; // [ANNOUNCEMENTS]
 
-import LoginScreen from './src/screens/LoginScreen';
-import SignupScreen from './src/screens/SignupScreen';
-import HomeScreen from './src/screens/HomeScreen';
-import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
-import OtpVerificationScreen from './src/screens/OtpVerificationScreen';
-import ChatScreen from './src/screens/ChatScreen';
+import LoginScreen from './src/screens/auth/LoginScreen';
+import SignupScreen from './src/screens/auth/SignupScreen';
+import HomeScreen from './src/screens/user/HomeScreen';
+import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
+import OtpVerificationScreen from './src/screens/auth/OtpVerificationScreen';
+import ChatScreen from './src/screens/user/ChatScreen';
 
-import AddNewUsersMessages from './src/screens/AddNewUsersMessagesScreen';
-import ChatNotifications from './src/screens/ChatNotificationsScreen';
+import AddNewUsersMessages from './src/screens/user/AddNewUsersMessagesScreen';
+import ChatNotifications from './src/screens/user/ChatNotificationsScreen';
 
-import MyPostsScreen from './src/screens/MyPostsScreen';
-import SettingsScreen from './src/screens/SettingsScreen';
-import EditProfileScreen from './src/screens/EditProfileScreen';
-import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
-import ChangeForgotPasswordScreen from './src/screens/ChangeForgotPasswordScreen';
-import MyListingsScreen from './src/screens/MyListingsScreen';
-import MyPetsScreen from './src/screens/MyPetsScreen';
-import LostAndFoundScreen from './src/screens/LostAndFoundScreen';
-import PetDetailsScreen from './src/screens/PetDetailsScreen';
+import MyPostsScreen from './src/screens/user/MyPostsScreen';
+import SettingsScreen from './src/screens/user/SettingsScreen';
+import EditProfileScreen from './src/screens/user/EditProfileScreen';
+import ChangePasswordScreen from './src/screens/user/ChangePasswordScreen';
+import ChangeForgotPasswordScreen from './src/screens/auth/ChangeForgotPasswordScreen';
+import MyListingsScreen from './src/screens/user/MyListingsScreen';
+import MyPetsScreen from './src/screens/user/MyPetsScreen';
+import LostAndFoundScreen from './src/screens/user/LostAndFoundScreen';
+import PetDetailsScreen from './src/screens/user/PetDetailsScreen';
 
 // [DASHBOARD-REDESIGN] new screens
-import FilterScreen from './src/screens/FilterScreen';
-import EditPetPostScreen from './src/screens/EditPetPostScreen'; // [PET-EDIT]
-import DeletePetPostScreen from './src/screens/DeletePetPostScreen'; // [DELETE-CONFIRM]
-import LikedPetsAndPostsScreen from './src/screens/LikedPetsAndPostsScreen'; // [LIKED-POSTS]
-import AllPetsScreen from './src/screens/AllPetsScreen'; // [DASHBOARD-REDESIGN]
-import ViewUserProfileScreen from './src/screens/ViewUserProfileScreen'; // [DASHBOARD-REDESIGN]
+import FilterScreen from './src/screens/user/FilterScreen';
+import EditPetPostScreen from './src/screens/user/EditPetPostScreen'; // [PET-EDIT]
+import DeletePetPostScreen from './src/screens/user/DeletePetPostScreen'; // [DELETE-CONFIRM]
+import LikedPetsAndPostsScreen from './src/screens/user/LikedPetsAndPostsScreen'; // [LIKED-POSTS]
+import AllPetsScreen from './src/screens/user/AllPetsScreen'; // [DASHBOARD-REDESIGN]
+import ViewUserProfileScreen from './src/screens/user/ViewUserProfileScreen'; // [DASHBOARD-REDESIGN]
 
 import AdminHomeScreen from './src/screens/admin/AdminHomeScreen';
 import AdminPostsScreen from './src/screens/admin/AdminPostsScreen';

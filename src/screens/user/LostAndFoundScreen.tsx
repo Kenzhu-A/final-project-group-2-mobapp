@@ -7,11 +7,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
-import { useTheme } from '../context/ThemeContext';
-import { api } from '../services/api';
-import CustomInput from '../components/CustomInput';
-import CustomDropdown from '../components/CustomDropdown';
-import PrimaryButton from '../components/PrimaryButton';
+import { useTheme } from '../../context/ThemeContext';
+import { api } from '../../services/api';
+import CustomInput from '../../components/CustomInput';
+import CustomDropdown from '../../components/CustomDropdown';
+import PrimaryButton from '../../components/PrimaryButton';
 
 export default function LostAndFoundScreen({ navigation }: any) {
   const { colors } = useTheme();

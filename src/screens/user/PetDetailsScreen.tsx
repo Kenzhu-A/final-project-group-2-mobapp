@@ -6,10 +6,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../context/ThemeContext';
-import { api } from '../services/api';
-import { useSavedPets } from '../hooks/useSavedPets';
-import ReportModal from '../components/ReportModal'; // [REPORTS]
+import { useTheme } from '../../context/ThemeContext';
+import { api } from '../../services/api';
+import { useSavedPets } from '../../hooks/useSavedPets';
+import ReportModal from '../../components/ReportModal'; // [REPORTS]
 
 const { width: SCREEN_W } = Dimensions.get('window');
 

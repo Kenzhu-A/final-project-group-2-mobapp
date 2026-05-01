@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const NOTIF_KEY = 'snoutscout_notifications';
 const isMessageNotif = (n: AppNotification) => n.type === 'new_message' || n.icon === 'chatbubble-outline';

@@ -8,10 +8,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { useTheme } from '../context/ThemeContext';
-import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { api } from '../services/api';
-import PetCard from '../components/PetCard';
+import { useTheme } from '../../context/ThemeContext';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { api } from '../../services/api';
+import PetCard from '../../components/PetCard';
 
 const CATEGORY_OPTIONS = [
   { key: 'All', dbValue: null },
