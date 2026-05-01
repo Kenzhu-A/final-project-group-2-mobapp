@@ -12,6 +12,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const NOTIF_KEY = 'snoutscout_notifications';
 const isMessageNotif = (n: AppNotification) => n.type === 'new_message' || n.icon === 'chatbubble-outline';
+const isAnnouncementNotif = (n: AppNotification) => n.type === 'announcement' || n.icon === 'megaphone-outline';
 
 export interface AppNotification {
   id: string;
@@ -82,10 +83,10 @@ export default function ChatNotificationsScreen({ navigation }: any) {
   // [PUSH-NOTIF] load from AsyncStorage; seed welcome notif on first open
   const load = useCallback(async () => {
     const raw = await AsyncStorage.getItem(NOTIF_KEY);
-    if (raw) {
-      setNotifications(JSON.parse(raw));
-    } else {
-      const seed: AppNotification[] = [
+    let list: AppNotification[] = raw ? JSON.parse(raw) : [];
+
+    if (!raw) {
+      list = [
         {
           id: 'welcome',
           title: 'Welcome to SnoutScout!',
@@ -95,19 +96,13 @@ export default function ChatNotificationsScreen({ navigation }: any) {
           read: true,
         },
       ];
-      await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(seed));
-      setNotifications(seed);
+      await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(list));
     }
-    // mark all message notifications as read when viewing this screen
-    const updated: AppNotification[] = raw
-      ? JSON.parse(raw).map((n: AppNotification) =>
-          isMessageNotif(n) ? { ...n, read: true } : n
-        )
-      : [];
-    if (updated.length) {
-      setNotifications(updated);
-      AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(updated)).catch(() => {});
-    }
+
+    // Auto-read announcements when opening notifications screen
+    const updated = list.map((n) => (isAnnouncementNotif(n) ? { ...n, read: true } : n));
+    setNotifications(updated);
+    AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(updated)).catch(() => {});
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -162,14 +157,6 @@ export default function ChatNotificationsScreen({ navigation }: any) {
     setSelected(new Set());
   };
 
-  const markAllRead = async () => {
-    const next = notifications.map((n) =>
-      isMessageNotif(n) ? { ...n, read: true } : n
-    );
-    setNotifications(next);
-    await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(next));
-  };
-
   const allSelected = allNotifs.length > 0 && selected.size === allNotifs.length;
   const toggleSelectAll = () => {
     if (allSelected) setSelected(new Set());
@@ -186,7 +173,7 @@ export default function ChatNotificationsScreen({ navigation }: any) {
               <Ionicons name="close" size={24} color={colors.textPrimary} />
             </Pressable>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-              {selected.size} selected
+              {`${selected.size} selected`}selected
             </Text>
             <Pressable onPress={toggleSelectAll} style={{ padding: 4 }}>
               <Ionicons
@@ -204,9 +191,6 @@ export default function ChatNotificationsScreen({ navigation }: any) {
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Notifications</Text>
             {allNotifs.length > 0 ? (
               <View style={styles.headerActions}>
-                <Pressable onPress={markAllRead} style={{ padding: 4 }}>
-                  <Text style={[styles.clearText, { color: colors.textSecondary }]}>Mark all read</Text>
-                </Pressable>
                 <Pressable onPress={clearAll} style={{ padding: 4 }}>
                   <Text style={[styles.clearText, { color: colors.primary }]}>Clear all</Text>
                 </Pressable>
@@ -223,7 +207,7 @@ export default function ChatNotificationsScreen({ navigation }: any) {
         <View style={[styles.deleteBar, { backgroundColor: '#FDECEA', borderTopColor: '#F5C6C6' }]}>
           <Pressable style={styles.deleteBarBtn} onPress={deleteSelected}>
             <Ionicons name="trash-outline" size={18} color="#D32F2F" />
-            <Text style={styles.deleteBarText}>Delete {selected.size} notification{selected.size > 1 ? 's' : ''}</Text>
+            <Text style={styles.deleteBarText}>{`Delete ${selected.size} notification${selected.size > 1 ? 's' : ''}`}</Text>
           </Pressable>
         </View>
       )}
@@ -236,13 +220,17 @@ export default function ChatNotificationsScreen({ navigation }: any) {
           allNotifs.length === 0 && styles.emptyContainer,
         ]}
         ListEmptyComponent={
-          <View style={styles.emptyInner}>
-            <Ionicons name="notifications-off-outline" size={56} color={colors.border} />
-            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No notifications</Text>
-            <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
-              You're all caught up! Check back later.
-            </Text>
-          </View>
+          // If we have a "Latest" header card, the list itself can be empty (only 1 notif total).
+          // In that case, don't show the empty-state UI underneath.
+          latest ? null : (
+            <View style={styles.emptyInner}>
+              <Ionicons name="notifications-off-outline" size={56} color={colors.border} />
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No notifications</Text>
+              <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
+                You're all caught up! Check back later.
+              </Text>
+            </View>
+          )
         }
         ListHeaderComponent={
           latest ? (
