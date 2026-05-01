@@ -1,50 +1,83 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TextInput, Pressable, FlatList, StyleSheet, KeyboardAvoidingView, Platform, Alert, Modal, TouchableWithoutFeedback } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { io, Socket } from 'socket.io-client';
-import * as Clipboard from 'expo-clipboard';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../context/ThemeContext';
-import { api, BASE_URL } from '../services/api';
+﻿import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  FlatList,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  Modal,
+  TouchableWithoutFeedback,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { io, Socket } from "socket.io-client";
+import * as Clipboard from "expo-clipboard";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTheme } from "../context/ThemeContext";
+import { api, BASE_URL } from "../services/api";
 
-const SOCKET_URL = BASE_URL.replace('/api', '');
-const CHAT_READ_KEY = 'snoutscout_chat_read_map';
+const SOCKET_URL = BASE_URL.replace("/api", "");
+const CHAT_READ_KEY = "snoutscout_chat_read_map";
+
+function getMessageId(m: any): string | undefined {
+  return m?.id ?? m?.message_id ?? m?.messageId ?? m?.uuid;
+}
+
+function normalizeMessage(m: any): any {
+  const id = getMessageId(m);
+  return id ? { ...m, id } : m;
+}
 
 export default function ChatScreen({ route, navigation }: any) {
-  const { colors } = useTheme(); 
-  const { receiverId, receiverName, senderId: routeSenderId, initialMessage } = route.params;
-  
+  const { colors } = useTheme();
+  const {
+    receiverId,
+    receiverName,
+    senderId: routeSenderId,
+    initialMessage,
+    onChatEnter,
+  } = route.params; // [MESSAGE-BADGE]
+
   const [messages, setMessages] = useState<any[]>([]);
-  const [inputText, setInputText] = useState(initialMessage || '');
-  const [senderId, setSenderId] = useState<string | null>(routeSenderId || null);
-  
+  const [inputText, setInputText] = useState(initialMessage || "");
+  const [senderId, setSenderId] = useState<string | null>(
+    routeSenderId || null,
+  );
+
   // Message Options State
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-  const [showDeleteConversationModal, setShowDeleteConversationModal] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
-  
+  const [showDeleteConversationModal, setShowDeleteConversationModal] =
+    useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
   const socketRef = useRef<Socket | null>(null);
   const flatListRef = useRef<FlatList>(null);
+  const senderIdRef = useRef<string | null>(null);
+  const messagesRef = useRef<any[]>([]);
   const safeExitChatToMessages = () => {
     navigation.reset({
       index: 0,
-      routes: [{ name: 'Home', params: { initialTab: 'messages' } }],
+      routes: [{ name: "Home", params: { initialTab: "messages" } }],
     });
   };
 
   const setupSocketConnection = useCallback(async () => {
     try {
-      const currentSenderId = routeSenderId || (await AsyncStorage.getItem('userId'));
+      const currentSenderId =
+        routeSenderId || (await AsyncStorage.getItem("userId"));
       setSenderId(currentSenderId);
       if (!currentSenderId) return;
 
       // Fetch message history
       const history = await api.getMessages(currentSenderId, receiverId);
-      setMessages(history);
-      
+      setMessages((history || []).map(normalizeMessage));
+
       // Mark conversation as read
       const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
       const readMap = readRaw ? JSON.parse(readRaw) : {};
@@ -56,35 +89,59 @@ export default function ChatScreen({ route, navigation }: any) {
 
       // Create new socket connection
       socketRef.current = io(SOCKET_URL);
-      socketRef.current.emit('register', currentSenderId);
-      
+      socketRef.current.emit("register", currentSenderId);
+
       // Set up event listeners
-      socketRef.current.on('receive_message', (newMessage) => {
+      socketRef.current.on("receive_message", (newMessage) => {
+        const normalized = normalizeMessage(newMessage);
         setMessages((prev) => {
-          if (prev.some(msg => msg.id === newMessage.id)) return prev;
-          return [...prev, newMessage];
+          const nid = getMessageId(normalized);
+          if (nid && prev.some((msg) => getMessageId(msg) === nid)) return prev;
+          return [...prev, normalized];
         });
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+        setTimeout(
+          () => flatListRef.current?.scrollToEnd({ animated: true }),
+          100,
+        );
       });
-      
-      socketRef.current.on('message_edited', (updatedMessage) => {
-        setMessages((prev) => prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m)));
+
+      socketRef.current.on("message_edited", (updatedMessage) => {
+        const normalized = normalizeMessage(updatedMessage);
+        const uid = getMessageId(normalized);
+        setMessages((prev) =>
+          prev.map((m) => (uid && getMessageId(m) === uid ? normalized : m)),
+        );
       });
-      
-      socketRef.current.on('message_deleted', ({ messageId }) => {
-        setMessages((prev) => prev.filter((m) => m.id !== messageId));
+
+      socketRef.current.on("message_deleted", ({ messageId }) => {
+        setMessages((prev) =>
+          prev.filter((m) => getMessageId(m) !== messageId),
+        );
       });
-      
-      socketRef.current.on('conversation_deleted', ({ user1, user2, deletedBy }) => {
-        const isCurrentConversation =
-          (user1 === currentSenderId && user2 === receiverId) || (user1 === receiverId && user2 === currentSenderId);
-        if (!isCurrentConversation) return;
-        setMessages([]);
-        if (deletedBy && deletedBy !== currentSenderId) {
-          Alert.alert('Conversation removed', 'This conversation was deleted.');
-        }
-        safeExitChatToMessages();
-      });
+
+      socketRef.current.on(
+        "conversation_deleted",
+        ({ user1, user2, deletedBy }) => {
+          const me = senderIdRef.current;
+
+          const isCurrentConversation =
+            (user1 === me && user2 === receiverId) ||
+            (user1 === receiverId && user2 === me);
+
+          if (!isCurrentConversation) return;
+
+          setMessages([]);
+
+          if (deletedBy && deletedBy !== me) {
+            Alert.alert(
+              "Conversation removed",
+              "This conversation was deleted.",
+            );
+          }
+
+          safeExitChatToMessages();
+        },
+      );
     } catch (e) {
       console.error(e);
     }
@@ -95,11 +152,14 @@ export default function ChatScreen({ route, navigation }: any) {
     useCallback(() => {
       setupSocketConnection();
 
+      // [MESSAGE-BADGE] Reset badge when entering specific chat
+      onChatEnter?.();
+
       return () => {
         // Keep socket connected (don't disconnect on blur)
         // This allows messages to be received even when not actively viewing the screen
       };
-    }, [setupSocketConnection])
+    }, [setupSocketConnection, onChatEnter]),
   );
 
   // Cleanup on unmount
@@ -109,32 +169,66 @@ export default function ChatScreen({ route, navigation }: any) {
     };
   }, []);
 
+  useEffect(() => {
+    senderIdRef.current = senderId;
+  }, [senderId]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
   const formatMessageTime = (iso?: string) => {
-    if (!iso) return '';
+    if (!iso) return "";
     const d = new Date(iso);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   const sendMessage = async () => {
-    if (!senderId) return;
-    if (inputText.trim() === '') return;
+    const currentSenderId = senderIdRef.current;
+    if (!currentSenderId) return;
+    if (inputText.trim() === "") return;
     const textToSend = inputText.trim();
-    
+
     if (editingMessageId) {
       // HANDLE EDIT
       const originalId = editingMessageId;
       try {
-        const updated = await api.editMessage(originalId, textToSend, senderId);
-        setMessages(prev => prev.map(m => m.id === originalId ? { ...m, ...updated } : m));
+        const updated = await api.editMessage(
+          originalId,
+          textToSend,
+          currentSenderId,
+        );
+        const normalized = normalizeMessage(updated);
+        setMessages((prev) =>
+          prev.map((m) =>
+            getMessageId(m) === originalId ? { ...m, ...normalized } : m,
+          ),
+        );
         setEditingMessageId(null);
-        setInputText('');
+        setInputText("");
       } catch (e: any) {
         Alert.alert("Error", e?.message || "Failed to edit message.");
       }
     } else {
       // HANDLE NEW MESSAGE
-      setInputText(''); 
-      socketRef.current?.emit('send_message', { sender_id: senderId, receiver_id: receiverId, text: textToSend });
+      setInputText("");
+
+      // Update readMap BEFORE sending so this conversation doesn't show as unread
+      // Use a buffer (+1000ms) to ensure this timestamp is always >= the server timestamp
+      const updateReadMapBeforeSend = async () => {
+        const futureTime = new Date(Date.now() + 1000).toISOString();
+        const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
+        const readMap = readRaw ? JSON.parse(readRaw) : {};
+        readMap[receiverId] = futureTime;
+        await AsyncStorage.setItem(CHAT_READ_KEY, JSON.stringify(readMap));
+      };
+      updateReadMapBeforeSend().catch(() => {});
+
+      socketRef.current?.emit("send_message", {
+        sender_id: currentSenderId,
+        receiver_id: receiverId,
+        text: textToSend,
+      });
     }
   };
 
@@ -144,39 +238,61 @@ export default function ChatScreen({ route, navigation }: any) {
   };
 
   const handleDeleteMessage = () => {
-    const idToDelete = selectedMessage.id;
+    const idToDelete = getMessageId(selectedMessage);
     setSelectedMessage(null);
+    if (!idToDelete) {
+      Alert.alert(
+        "Error",
+        "Unable to delete this message (missing id). Please refresh the chat and try again.",
+      );
+      return;
+    }
     Alert.alert("Delete Message", "Remove this message?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: async () => {
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
           try {
-            if (!senderId) return;
-            await api.deleteMessage(idToDelete, senderId);
-            setMessages(prev => prev.filter(m => m.id !== idToDelete));
-            const latest = await api.getMessages(senderId, receiverId);
-            setMessages(latest);
+            if (!senderIdRef.current) return;
+            setMessages((prev) =>
+              prev.filter((m) => getMessageId(m) !== idToDelete),
+            );
+
+            try {
+              await api.deleteMessage(idToDelete, senderIdRef.current);
+            } catch (e) {
+              if (senderIdRef.current) {
+                const latest = await api.getMessages(
+                  senderIdRef.current,
+                  receiverId,
+                );
+                setMessages((latest || []).map(normalizeMessage));
+              }
+              throw e;
+            }
           } catch (e: any) {
             Alert.alert("Error", e?.message || "Failed to delete message.");
           }
-      }}
+        },
+      },
     ]);
   };
 
   const handleDeleteConversation = () => {
     (async () => {
-      const currentUserId = senderId || (await AsyncStorage.getItem('userId'));
+      const currentUserId =
+        senderIdRef.current || (await AsyncStorage.getItem("userId"));
       if (!currentUserId) {
-        Alert.alert('Error', 'Unable to identify current user. Please re-login and try again.');
-        return;
-      }
-      if (deleteConfirmText.trim().toUpperCase() !== 'DELETE') {
-        Alert.alert('Confirmation required', 'Type DELETE to confirm conversation deletion.');
+        Alert.alert(
+          "Error",
+          "Unable to identify current user. Please re-login and try again.",
+        );
         return;
       }
       try {
         await api.deleteConversation(currentUserId, receiverId, currentUserId);
         setShowDeleteConversationModal(false);
-        setDeleteConfirmText('');
         setMessages([]);
         safeExitChatToMessages();
       } catch (e: any) {
@@ -186,21 +302,52 @@ export default function ChatScreen({ route, navigation }: any) {
   };
 
   const renderMessage = ({ item }: { item: any }) => {
-    const isMe = item.sender_id === senderId;
+    const isMe = item.sender_id === senderIdRef.current;
     return (
-      <View style={[styles.messageRow, { alignSelf: isMe ? 'flex-end' : 'flex-start' }]}>
-        <Pressable 
+      <View
+        style={[
+          styles.messageRow,
+          { alignSelf: isMe ? "flex-end" : "flex-start" },
+        ]}
+      >
+        <Pressable
           onLongPress={() => setSelectedMessage(item)}
           delayLongPress={300}
           style={[
-            styles.messageBubble, 
-            isMe ? { backgroundColor: colors.primary, borderBottomRightRadius: 4, alignSelf: 'flex-end' } 
-                 : { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderBottomLeftRadius: 4, alignSelf: 'flex-start' }
+            styles.messageBubble,
+            isMe
+              ? {
+                  backgroundColor: colors.primary,
+                  borderBottomRightRadius: 4,
+                  alignSelf: "flex-end",
+                }
+              : {
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderBottomLeftRadius: 4,
+                  alignSelf: "flex-start",
+                },
           ]}
         >
-          <Text style={[styles.messageText, isMe ? { color: '#FFF' } : { color: colors.textPrimary }]}>{item.text}</Text>
+          <Text
+            style={[
+              styles.messageText,
+              isMe ? { color: "#FFF" } : { color: colors.textPrimary },
+            ]}
+          >
+            {item.text}
+          </Text>
         </Pressable>
-        <Text style={[styles.messageTime, { color: colors.textSecondary, alignSelf: isMe ? 'flex-end' : 'flex-start' }]}>
+        <Text
+          style={[
+            styles.messageTime,
+            {
+              color: colors.textSecondary,
+              alignSelf: isMe ? "flex-end" : "flex-start",
+            },
+          ]}
+        >
           {formatMessageTime(item.created_at)}
         </Text>
       </View>
@@ -208,40 +355,86 @@ export default function ChatScreen({ route, navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+    >
       {/* NO TOP BAR DESIGN: Flush background, transparent, minimalist icons */}
-      <View style={[styles.cleanHeader, { backgroundColor: colors.background }]}>
+      <View
+        style={[styles.cleanHeader, { backgroundColor: colors.background }]}
+      >
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary, flex: 1, textAlign: 'center' }]}>{receiverName}</Text>
-        <Pressable onPress={() => setShowDeleteConversationModal(true)} style={styles.optionsBtn}>
-          <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
+        <Text
+          style={[
+            styles.headerTitle,
+            { color: colors.textPrimary, flex: 1, textAlign: "center" },
+          ]}
+        >
+          {receiverName}
+        </Text>
+        <Pressable
+          onPress={() => setShowDeleteConversationModal(true)}
+          style={styles.optionsBtn}
+        >
+          <Ionicons
+            name="ellipsis-horizontal"
+            size={24}
+            color={colors.textPrimary}
+          />
         </Pressable>
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container} keyboardVerticalOffset={Platform.OS === 'android' ? 25 : 0}>
-        
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+        keyboardVerticalOffset={Platform.OS === "android" ? 25 : 0}
+      >
         <FlatList
           ref={flatListRef}
           data={messages}
-          keyExtractor={(item, index) => item.id || index.toString()}
+          keyExtractor={(item, index) => getMessageId(item) || index.toString()}
           renderItem={renderMessage}
           contentContainerStyle={styles.chatList}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onContentSizeChange={() =>
+            flatListRef.current?.scrollToEnd({ animated: true })
+          }
         />
 
-        <View style={[styles.inputWrapper, { backgroundColor: colors.background }]}>
+        <View
+          style={[styles.inputWrapper, { backgroundColor: colors.background }]}
+        >
           {editingMessageId && (
             <View style={styles.editingBanner}>
-              <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'DMSans_700Bold' }}>Editing message...</Text>
-              <Pressable onPress={() => { setEditingMessageId(null); setInputText(''); }}>
-                <Ionicons name="close-circle" size={16} color={colors.textSecondary} />
+              <Text
+                style={{
+                  color: colors.primary,
+                  fontSize: 12,
+                  fontFamily: "DMSans_700Bold",
+                }}
+              >
+                Editing message...
+              </Text>
+              <Pressable
+                onPress={() => {
+                  setEditingMessageId(null);
+                  setInputText("");
+                }}
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={16}
+                  color={colors.textSecondary}
+                />
               </Pressable>
             </View>
           )}
-          <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View
+            style={[
+              styles.inputContainer,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
             <TextInput
               style={[styles.input, { color: colors.textPrimary }]}
               placeholder="Message..."
@@ -250,77 +443,164 @@ export default function ChatScreen({ route, navigation }: any) {
               placeholderTextColor={colors.textSecondary}
               multiline
             />
-            <Pressable style={[styles.sendButton, { backgroundColor: inputText.trim() ? colors.primary : colors.border }]} onPress={sendMessage}>
+            <Pressable
+              style={[
+                styles.sendButton,
+                {
+                  backgroundColor: inputText.trim()
+                    ? colors.primary
+                    : colors.border,
+                },
+              ]}
+              onPress={sendMessage}
+            >
               <Ionicons name="send" size={16} color="#FFF" />
             </Pressable>
           </View>
         </View>
-
       </KeyboardAvoidingView>
 
       {/* MESSAGE OPTIONS MODAL */}
       <Modal visible={!!selectedMessage} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={() => setSelectedMessage(null)}>
           <View style={styles.modalOverlay}>
-            <View style={[styles.optionsMenu, { backgroundColor: colors.surface }]}>
-              
-              <Pressable style={[styles.optionItem, { borderBottomColor: colors.border }]} onPress={handleCopy}>
-                <Ionicons name="copy-outline" size={20} color={colors.textPrimary} style={styles.optionIcon} />
-                <Text style={[styles.optionText, { color: colors.textPrimary }]}>Copy Text</Text>
+            <View
+              style={[styles.optionsMenu, { backgroundColor: colors.surface }]}
+            >
+              <Pressable
+                style={[
+                  styles.optionItem,
+                  { borderBottomColor: colors.border },
+                ]}
+                onPress={handleCopy}
+              >
+                <Ionicons
+                  name="copy-outline"
+                  size={20}
+                  color={colors.textPrimary}
+                  style={styles.optionIcon}
+                />
+                <Text
+                  style={[styles.optionText, { color: colors.textPrimary }]}
+                >
+                  Copy Text
+                </Text>
               </Pressable>
-              
-              {selectedMessage?.sender_id === senderId && (
+
+              {selectedMessage?.sender_id === senderIdRef.current && (
                 <>
-                  <Pressable style={[styles.optionItem, { borderBottomColor: colors.border }]} onPress={() => {
-                    setEditingMessageId(selectedMessage.id);
-                    setInputText(selectedMessage.text);
-                    setSelectedMessage(null);
-                  }}>
-                    <Ionicons name="pencil-outline" size={20} color={colors.textPrimary} style={styles.optionIcon} />
-                    <Text style={[styles.optionText, { color: colors.textPrimary }]}>Edit Message</Text>
+                  <Pressable
+                    style={[
+                      styles.optionItem,
+                      { borderBottomColor: colors.border },
+                    ]}
+                    onPress={() => {
+                      const id = getMessageId(selectedMessage);
+                      if (!id) return;
+                      setEditingMessageId(id);
+                      setInputText(selectedMessage.text);
+                      setSelectedMessage(null);
+                    }}
+                  >
+                    <Ionicons
+                      name="pencil-outline"
+                      size={20}
+                      color={colors.textPrimary}
+                      style={styles.optionIcon}
+                    />
+                    <Text
+                      style={[styles.optionText, { color: colors.textPrimary }]}
+                    >
+                      Edit Message
+                    </Text>
                   </Pressable>
-                  
-                  <Pressable style={[styles.optionItem, { borderBottomWidth: 0 }]} onPress={handleDeleteMessage}>
-                    <Ionicons name="trash-outline" size={20} color="#D32F2F" style={styles.optionIcon} />
-                    <Text style={[styles.optionText, { color: '#D32F2F' }]}>Delete</Text>
+
+                  <Pressable
+                    style={[styles.optionItem, { borderBottomWidth: 0 }]}
+                    onPress={handleDeleteMessage}
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={20}
+                      color="#D32F2F"
+                      style={styles.optionIcon}
+                    />
+                    <Text style={[styles.optionText, { color: "#D32F2F" }]}>
+                      Delete
+                    </Text>
                   </Pressable>
                 </>
               )}
-
             </View>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
 
-      <Modal visible={showDeleteConversationModal} transparent animationType="fade">
-        <TouchableWithoutFeedback onPress={() => setShowDeleteConversationModal(false)}>
+      <Modal
+        visible={showDeleteConversationModal}
+        transparent
+        animationType="fade"
+      >
+        <TouchableWithoutFeedback
+          onPress={() => setShowDeleteConversationModal(false)}
+        >
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
-              <View style={[styles.deleteConversationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={[styles.deleteConversationTitle, { color: colors.textPrimary }]}>Delete Conversation</Text>
-                <Text style={[styles.deleteConversationSub, { color: colors.textSecondary }]}>
-                  This action is permanent. Type DELETE to confirm.
+              <View
+                style={[
+                  styles.deleteConversationCard,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <View style={styles.deleteIconWrapper}>
+                  <Ionicons name="trash-outline" size={28} color="#D32F2F" />
+                </View>
+
+                <Text
+                  style={[
+                    styles.deleteConversationTitle,
+                    { color: colors.textPrimary },
+                  ]}
+                >
+                  Delete Conversation
                 </Text>
-                <TextInput
-                  style={[styles.deleteConversationInput, { borderColor: colors.border, color: colors.textPrimary }]}
-                  placeholder="Type DELETE here"
-                  placeholderTextColor={colors.textSecondary}
-                  value={deleteConfirmText}
-                  onChangeText={setDeleteConfirmText}
-                  autoCapitalize="characters"
-                />
+                <Text
+                  style={[
+                    styles.deleteConversationSub,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  This conversation will be permanently deleted for both you and{" "}
+                  {receiverName}. This cannot be undone.
+                </Text>
+
                 <View style={styles.deleteConversationBtns}>
                   <Pressable
                     style={[styles.modalBtn, { borderColor: colors.border }]}
-                    onPress={() => {
-                      setShowDeleteConversationModal(false);
-                      setDeleteConfirmText('');
-                    }}
+                    onPress={() => setShowDeleteConversationModal(false)}
                   >
-                    <Text style={[styles.modalBtnText, { color: colors.textPrimary }]}>Go Back</Text>
+                    <Text
+                      style={[
+                        styles.modalBtnText,
+                        { color: colors.textPrimary },
+                      ]}
+                    >
+                      Keep it
+                    </Text>
                   </Pressable>
-                  <Pressable style={[styles.modalBtn, { backgroundColor: '#D32F2F', borderColor: '#D32F2F' }]} onPress={handleDeleteConversation}>
-                    <Text style={[styles.modalBtnText, { color: '#FFF' }]}>Delete conversation</Text>
+                  <Pressable
+                    style={[
+                      styles.modalBtn,
+                      { backgroundColor: "#D32F2F", borderColor: "#D32F2F" },
+                    ]}
+                    onPress={handleDeleteConversation}
+                  >
+                    <Text style={[styles.modalBtnText, { color: "#FFF" }]}>
+                      Delete conversation
+                    </Text>
                   </Pressable>
                 </View>
               </View>
@@ -328,7 +608,6 @@ export default function ChatScreen({ route, navigation }: any) {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
     </SafeAreaView>
   );
 }
@@ -336,33 +615,122 @@ export default function ChatScreen({ route, navigation }: any) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   container: { flex: 1 },
-  cleanHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 0 },
+  cleanHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 0,
+  },
   backBtn: { padding: 4 },
   optionsBtn: { padding: 4 },
-  headerTitle: { fontSize: 18, fontFamily: 'DMSans_700Bold' },
+  headerTitle: { fontSize: 18, fontFamily: "DMSans_700Bold" },
   chatList: { padding: 16, paddingBottom: 24 },
-  messageRow: { marginBottom: 10, maxWidth: '80%' },
-  messageBubble: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20 },
-  messageText: { fontSize: 15, fontFamily: 'DMSans_400Regular', lineHeight: 22 },
-  messageTime: { fontSize: 11, fontFamily: 'DMSans_400Regular', marginTop: 4 },
-  
+  messageRow: { marginBottom: 10, maxWidth: "80%" },
+  messageBubble: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+  },
+  messageText: {
+    fontSize: 15,
+    fontFamily: "DMSans_400Regular",
+    lineHeight: 22,
+  },
+  messageTime: { fontSize: 11, fontFamily: "DMSans_400Regular", marginTop: 4 },
+
   inputWrapper: { paddingHorizontal: 16, paddingBottom: 16, paddingTop: 8 },
-  editingBanner: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, paddingBottom: 8 },
-  inputContainer: { flexDirection: 'row', alignItems: 'flex-end', borderWidth: 1, borderRadius: 24, paddingLeft: 16, paddingRight: 8, paddingVertical: 8, minHeight: 48 },
-  input: { flex: 1, maxHeight: 100, fontFamily: 'DMSans_400Regular', paddingTop: 8, paddingBottom: 8 },
-  sendButton: { width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center', marginLeft: 8, marginBottom: 2 },
-  
+  editingBanner: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    borderWidth: 1,
+    borderRadius: 24,
+    paddingLeft: 16,
+    paddingRight: 8,
+    paddingVertical: 8,
+    minHeight: 48,
+  },
+  input: {
+    flex: 1,
+    maxHeight: 100,
+    fontFamily: "DMSans_400Regular",
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  sendButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 8,
+    marginBottom: 2,
+  },
+
   // Modal Styles
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
-  optionsMenu: { width: 250, borderRadius: 16, overflow: 'hidden' },
-  optionItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 20, borderBottomWidth: 1 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  optionsMenu: { width: 250, borderRadius: 16, overflow: "hidden" },
+  optionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+  },
   optionIcon: { marginRight: 16 },
-  optionText: { fontSize: 16, fontFamily: 'DMSans_400Regular' },
-  deleteConversationCard: { width: '88%', borderRadius: 16, borderWidth: 1, padding: 16 },
-  deleteConversationTitle: { fontSize: 20, fontFamily: 'DMSerifDisplay_400Regular', marginBottom: 8 },
-  deleteConversationSub: { fontSize: 13, fontFamily: 'DMSans_400Regular', marginBottom: 12 },
-  deleteConversationInput: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'DMSans_400Regular' },
+  optionText: { fontSize: 16, fontFamily: "DMSans_400Regular" },
+  deleteConversationCard: {
+    width: "88%",
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+  },
+  deleteConversationTitle: {
+    fontSize: 20,
+    fontFamily: "DMSerifDisplay_400Regular",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  deleteConversationSub: {
+    fontSize: 13,
+    fontFamily: "DMSans_400Regular",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  deleteConversationInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontFamily: "DMSans_400Regular",
+  },
   deleteConversationBtns: { marginTop: 14, gap: 10 },
-  modalBtn: { borderWidth: 1, borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
-  modalBtnText: { fontSize: 14, fontFamily: 'DMSans_700Bold' },
+  modalBtn: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 11,
+    alignItems: "center",
+  },
+  deleteIconWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#FDECEA",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginBottom: 12,
+  },
+  modalBtnText: { fontSize: 14, fontFamily: "DMSans_700Bold" },
 });

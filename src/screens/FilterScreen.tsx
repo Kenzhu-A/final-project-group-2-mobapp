@@ -1,10 +1,11 @@
 ﻿// [DASHBOARD-REDESIGN] full-screen filter with persistence (replaces bottom-sheet design)
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SPECIES = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Other'];
 // [OTHER-CATEGORY] anything outside standard list is treated as "Other"
@@ -30,11 +31,25 @@ interface Filters {
   city?: string;
 }
 
+function parseAgeYears(age: any): number {
+  if (age == null) return 0;
+  if (typeof age === 'number' && Number.isFinite(age)) return age;
+  if (typeof age === 'string') {
+    const s = age.trim().toLowerCase();
+    // supports "2 Years", "6 Months", "1.5 years", "8+"
+    const num = parseFloat(s.replace(/[^\d.]+/g, ''));
+    if (!Number.isFinite(num)) return 0;
+    if (s.includes('month')) return num / 12;
+    return num;
+  }
+  return 0;
+}
+
 export default function FilterScreen({ route, navigation }: any) {
   const { colors } = useTheme();
   const initial: Filters = route.params?.initialFilters ?? {};
   const allPets: any[] = route.params?.pets ?? [];
-  const onApply: (f: Filters) => void = route.params?.onApply;
+  const filtersStorageKey: string = route.params?.filtersStorageKey ?? 'dashboardFilters_v1';
 
   const [species, setSpecies] = useState<string[]>(initial.species ?? []);
   const [ageBucket, setAgeBucket] = useState<string>(initial.ageBucket ?? '');
@@ -99,31 +114,6 @@ export default function FilterScreen({ route, navigation }: any) {
     setter(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   };
 
-  const previewCount = useMemo(() => {
-    return allPets.filter((p) => {
-      // [OTHER-CATEGORY] 'Other' matches any non-standard category
-      if (species.length) {
-        const matched = species.some((s) =>
-          s === 'Other' ? !STANDARD_CATS.includes(p.category) : p.category === s
-        );
-        if (!matched) return false;
-      }
-      if (size.length && !size.includes(p.size)) return false;
-      if (maxPrice < 50000 && (p.price ?? 0) > maxPrice) return false;
-      if (city && !(p.location || '').toLowerCase().includes(city.toLowerCase())) return false;
-      if (ageBucket) {
-        const a = p.age ?? 0;
-        const ok =
-          (ageBucket === 'puppy' && a < 1) ||
-          (ageBucket === 'young' && a >= 1 && a < 3) ||
-          (ageBucket === 'adult' && a >= 3 && a < 8) ||
-          (ageBucket === 'senior' && a >= 8);
-        if (!ok) return false;
-      }
-      return true;
-    }).length;
-  }, [allPets, species, ageBucket, size, maxPrice, city]);
-
   const reset = () => {
     setSpecies([]); 
     setAgeBucket(''); 
@@ -142,7 +132,7 @@ export default function FilterScreen({ route, navigation }: any) {
       maxPrice: maxPrice < 50000 ? maxPrice : undefined,
       city: city.trim() || undefined,
     };
-    onApply?.(next);
+    AsyncStorage.setItem(filtersStorageKey, JSON.stringify(next)).catch(() => {});
     navigation.goBack();
   };
 
@@ -242,7 +232,7 @@ export default function FilterScreen({ route, navigation }: any) {
 
       <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
         <Pressable onPress={apply} style={[styles.applyBtn, { backgroundColor: colors.accent }]}>
-          <Text style={styles.applyText}>Apply ({previewCount})</Text>
+          <Text style={styles.applyText}>Apply</Text>
         </Pressable>
       </View>
     </SafeAreaView>

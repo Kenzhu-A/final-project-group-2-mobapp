@@ -1,10 +1,11 @@
-﻿import React, { useState, useCallback, useEffect } from 'react';
+﻿import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, BackHandler, LayoutAnimation, UIManager, Platform, Pressable, ActivityIndicator, Image, ScrollView, Alert, KeyboardAvoidingView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { io, Socket } from 'socket.io-client';
 
 import BottomNavBar from '../components/BottomNavBar';
 import CustomInput from '../components/CustomInput';
@@ -20,8 +21,11 @@ import DashboardScreen from './DashboardScreen';
 import SavedPetsScreen from './SavedPetsScreen';
 
 import { useTheme } from '../context/ThemeContext';
-import { api } from '../services/api';
+import { api, BASE_URL } from '../services/api';
 import { useSavedPets } from '../hooks/useSavedPets'; // [SAVED-PETS]
+
+const SOCKET_URL = BASE_URL.replace('/api', '');
+const CHAT_READ_KEY = 'snoutscout_chat_read_map';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -48,6 +52,9 @@ export default function HomeScreen({ navigation, route }: any) {
   const { refresh: refreshSavedPets } = useSavedPets(); // [SAVED-PETS] re-scope to logged-in user on mount
   
   const [activeTab, setActiveTab] = useState('home'); // [DASHBOARD-REDESIGN]
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0); // [MESSAGE-BADGE]
+  const socketRef = useRef<Socket | null>(null);
+  const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const requestedTab = route?.params?.initialTab;
@@ -113,10 +120,79 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   }, [activeTab]);
 
+  // [MESSAGE-BADGE] Set up real-time message badge
+  useEffect(() => {
+    const setupMessageBadge = async () => {
+      const userId = await AsyncStorage.getItem('userId');
+      userIdRef.current = userId;
+      if (!userId) return;
+
+      // Disconnect previous socket if any
+      socketRef.current?.disconnect();
+
+      const socket = io(SOCKET_URL);
+      socketRef.current = socket;
+      socket.emit('register', userId);
+
+      // Calculate initial unread count
+      const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
+      const readMap = readRaw ? JSON.parse(readRaw) : {};
+      
+      // Get all conversations to calculate unread count
+      try {
+        const conversations = await api.getConversations(userId);
+        const unreadCount = conversations.filter((c: any) => {
+          const latestTs = c.createdAt || c.created_at;
+          const readTs = readMap[c.partnerId];
+          return !readTs || new Date(latestTs).getTime() > new Date(readTs).getTime();
+        }).length;
+        setUnreadMessageCount(unreadCount);
+      } catch (err) {
+        console.error('[MESSAGE-BADGE] Failed to get conversations:', err);
+      }
+
+      // Listen for incoming messages and update badge
+      socket.on('receive_message', async (newMessage: any) => {
+        // Only count if it's from someone else (not from current user)
+        if (newMessage.sender_id !== userId) {
+          const partnerId =
+            newMessage.sender_id === userId ? newMessage.receiver_id : newMessage.sender_id;
+
+          // Update readMap so receiver sees it as unread
+          const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
+          const readMap = readRaw ? JSON.parse(readRaw) : {};
+          
+          // Check if this conversation was already unread
+          const latestTs = newMessage.created_at;
+          const readTs = readMap[partnerId];
+          const wasUnread = !readTs || new Date(latestTs).getTime() > new Date(readTs).getTime();
+
+          if (wasUnread) {
+            // Only increment if it's newly unread
+            const unreadCount = (prev: number) => prev + 1;
+            setUnreadMessageCount(prev => prev + 1);
+          }
+        }
+      });
+    };
+
+    setupMessageBadge();
+
+    // Cleanup
+    return () => {
+      socketRef.current?.disconnect();
+    };
+  }, []);
+
   const handleTabChange = (tab: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setActiveTab(tab);
   };
+
+  // [MESSAGE-BADGE] Callback to reset unread badge when entering ChatScreen
+  const resetMessageBadge = useCallback(() => {
+    setUnreadMessageCount(0);
+  }, []);
 
   const fetchLocations = async (query: string) => {
     setLocationQuery(query);
@@ -403,7 +479,7 @@ export default function HomeScreen({ navigation, route }: any) {
         {/* --- MESSAGES TAB (CLEAN 2-LINER) --- */}
         {activeTab === 'messages' && (
           <View style={[styles.tabContent, { paddingHorizontal: 0 }]}>
-            <PetChatsScreen navigation={navigation} />
+            <PetChatsScreen navigation={navigation} onChatEnter={resetMessageBadge} />
           </View>
         )}
 
@@ -411,7 +487,7 @@ export default function HomeScreen({ navigation, route }: any) {
         {activeTab === 'profile' && <ProfileScreen navigation={navigation} handleSignOut={handleSignOut} setActiveTab={handleTabChange} />}
 
       </View>
-      <BottomNavBar activeTab={activeTab} setActiveTab={handleTabChange} />
+      <BottomNavBar activeTab={activeTab} setActiveTab={handleTabChange} unreadMessageCount={unreadMessageCount} />
     </SafeAreaView>
   );
 }

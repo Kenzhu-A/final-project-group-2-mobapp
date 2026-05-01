@@ -5,16 +5,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import * as WebBrowser from 'expo-web-browser';
 import CustomInput from '../components/CustomInput';
 import PrimaryButton from '../components/PrimaryButton';
 import { useTheme } from '../context/ThemeContext';
 import { Validators } from '../utils/validators';
-import { api, BASE_URL } from '../services/api'; // <-- IMPORTED BASE_URL FOR THE TEST
+import { api } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { registerForPushNotificationsAsync } from '../utils/notifications'; // [PUSH-NOTIF]
-
-WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen({ navigation }: any) {
   const { colors } = useTheme();
@@ -86,41 +83,6 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
   
- const handleGoogleLogin = async () => {
-    try {
-      setIsLoading(true);
-      
-      // 1. Get the URL from our backend
-      const response = await api.getGoogleAuthUrl();
-      
-      // Note: Make sure to use response.url!
-      const result = await WebBrowser.openAuthSessionAsync(response.url, 'snoutscout://auth/callback');
-      
-      if (result.type === 'success' && result.url) {
-        
-        // 2. Extract the access_token hidden inside the URL string
-        const match = result.url.match(/access_token=([^&]*)/);
-        const accessToken = match ? match[1] : null;
-
-        if (!accessToken) {
-          throw new Error("Authentication failed: No token received from Google.");
-        }
-
-        // 3. Send the token to our backend to verify it and get the User ID
-        const userId = await api.verifyGoogleToken(accessToken);
-
-        // 4. Save the user ID to the phone's memory so the Home screen knows who is logged in!
-        await AsyncStorage.setItem('userId', userId);
-        
-        navigation.navigate('Home');
-      }
-    } catch (err: any) {
-      Alert.alert("Google Login Error", err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -160,20 +122,6 @@ export default function LoginScreen({ navigation }: any) {
 
             <View style={styles.footer}>
               <PrimaryButton title="Sign In" onPress={handleLogin} loading={isLoading} disabled={!email || !password} />
-              
-              <View style={styles.dividerContainer}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or continue with</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              <Pressable
-                style={({ pressed }) => [styles.googleButton, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.7 }]}
-                onPress={handleGoogleLogin}
-              >
-                <Image source={require('../../assets/googlelogo.png')} style={styles.googleIcon} />
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
-              </Pressable>
 
               <View style={styles.signupRow}>
                 <Text style={[styles.footerText, { color: colors.textSecondary }]}>Don't have an account? </Text>
@@ -184,23 +132,6 @@ export default function LoginScreen({ navigation }: any) {
                   <Text style={[styles.signupText, { color: colors.primary }]}>Sign Up</Text>
                 </Pressable>
               </View>
-
-              {/* --- TEMPORARY CONNECTION TEST --- */}
-              <Pressable 
-                style={({ pressed }) => [styles.testButton, pressed && { opacity: 0.7 }]}
-                onPress={async () => {
-                  try {
-                    // Pings the backend to see if it responds
-                    await api.getGoogleAuthUrl();
-                    Alert.alert('✅ Connection Success', `Frontend successfully reached the backend at:\n${BASE_URL}`);
-                  } catch (err: any) {
-                    Alert.alert('❌ Connection Failed', `Could not reach backend at:\n${BASE_URL}\n\nError: ${err.message}`);
-                  }
-                }}
-              >
-                <Text style={styles.testButtonText}>Test Backend Connection</Text>
-              </Pressable>
-              {/* --------------------------------- */}
 
             </View>
 
@@ -246,17 +177,9 @@ const styles = StyleSheet.create({
   forgotPasswordContainer: { alignSelf: 'flex-end', marginTop: -8, marginBottom: 16 },
   forgotPasswordText: { fontSize: 13, fontFamily: 'DMSans_700Bold' },
   footer: { marginTop: 'auto' },
-  dividerContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 24 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#E9ECEF' },
-  dividerText: { marginHorizontal: 16, color: '#6C757D', fontFamily: 'DMSans_400Regular', fontSize: 13 },
-  googleButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 26, height: 52, marginBottom: 24 },
-  googleIcon: { width: 24, height: 24, marginRight: 16 },
-  googleButtonText: { fontSize: 16, fontFamily: 'DMSans_700Bold', color: '#212529' },
-  signupRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 4, marginBottom: 8 },
+  signupRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 16, marginBottom: 8 },
   footerText: { fontSize: 14, fontFamily: 'DMSans_400Regular' },
   signupText: { fontSize: 14, fontFamily: 'DMSans_700Bold' },
-  testButton: { marginTop: 32, paddingVertical: 8, alignSelf: 'center', backgroundColor: '#E8F5E9', paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: '#28A745' },
-  testButtonText: { color: '#28A745', fontSize: 12, fontFamily: 'DMSans_700Bold' },
   // [LOGIN-MODAL]
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center' },
   modalCard: { backgroundColor: '#FFF', borderRadius: 24, paddingHorizontal: 40, paddingVertical: 36, alignItems: 'center', width: 280, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.18, shadowRadius: 20, elevation: 12 },

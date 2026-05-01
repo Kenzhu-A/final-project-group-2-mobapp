@@ -73,9 +73,20 @@ export default function EditProfileScreen({ navigation }: any) {
 
   const handleUpdateProfile = async () => {
     try {
+      const nextName = fullName.trim().replace(/\s+/g, ' ');
+      if (!nextName) {
+        Alert.alert('Invalid name', 'Full name is required.');
+        return;
+      }
+      // Letters + spaces only (no numbers/special characters)
+      if (!/^[\p{L}\s]+$/u.test(nextName)) {
+        Alert.alert('Invalid name', 'Name must contain letters only (spaces allowed).');
+        return;
+      }
+
       const userId = await AsyncStorage.getItem('userId');
       if (!userId) return;
-      await api.updateProfile(userId, fullName);
+      await api.updateProfile(userId, nextName);
       Alert.alert('Success', 'Profile updated successfully!');
       
       // Going back automatically triggers the ProfileScreen to re-fetch the new data
@@ -113,7 +124,6 @@ export default function EditProfileScreen({ navigation }: any) {
           </View>
 
           <CustomInput label="Full Name" placeholder="Your Name" value={fullName} onChangeText={setFullName} />
-          <CustomInput label="Email Address" placeholder="Your Email" value={user?.email || ''} editable={false} />
           
           <View style={{ marginTop: 24 }}>
             <PrimaryButton title="Save Changes" onPress={handleUpdateProfile} />

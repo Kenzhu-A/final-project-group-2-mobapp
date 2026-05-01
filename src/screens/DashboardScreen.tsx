@@ -1,5 +1,5 @@
 ﻿// [DASHBOARD-REDESIGN] main dashboard — rendered by HomeScreen for activeTab === 'home'
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, Pressable,
   FlatList, Image, RefreshControl, ActivityIndicator,
@@ -7,15 +7,17 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { io, Socket } from 'socket.io-client';
 
 import { useTheme } from '../context/ThemeContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { api } from '../services/api';
+import { api, BASE_URL } from '../services/api';
 import { pushLocalNotification } from './ChatNotificationsScreen'; // [ANNOUNCEMENTS]
 import PetCard from '../components/PetCard';
 import HeroCarousel from '../components/HeroCarousel';
 import GeneralPostCard from '../components/GeneralPostCard'; // [COMMUNITY-FEED]
 
+const SOCKET_URL = BASE_URL.replace('/api', '');
 const CATEGORY_OPTIONS = [
   { key: 'All', dbValue: null },
   { key: 'Dogs', dbValue: 'Dog' },
@@ -32,6 +34,19 @@ const isOtherCat = (cat: string) => !STANDARD_CATS.includes(cat);
 const CATEGORY_KEY = 'lastSelectedCategory_v1';
 const FILTERS_KEY = 'dashboardFilters_v1';
 const NEAR_YOU_LIMIT = 8; // cards shown in the horizontal strip
+
+function parseAgeYears(age: any): number {
+  if (age == null) return 0;
+  if (typeof age === 'number' && Number.isFinite(age)) return age;
+  if (typeof age === 'string') {
+    const s = age.trim().toLowerCase();
+    const num = parseFloat(s.replace(/[^\d.]+/g, ''));
+    if (!Number.isFinite(num)) return 0;
+    if (s.includes('month')) return num / 12;
+    return num;
+  }
+  return 0;
+}
 
 function getGreeting(d = new Date()): string {
   const h = d.getHours();
@@ -72,6 +87,19 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [filters, setFilters] = useState<Filters>({});
 
+  const socketRef = useRef<Socket | null>(null);
+  const userIdRef = useRef<string | null>(null);
+
+  const activeFilterCount = useMemo(() => {
+    let n = 0;
+    if (filters.species?.length) n += 1;
+    if (filters.size?.length) n += 1;
+    if (filters.ageBucket) n += 1;
+    if (filters.maxPrice != null) n += 1;
+    if (filters.city?.trim()) n += 1;
+    return n;
+  }, [filters]);
+
   useEffect(() => {
     (async () => {
       const cat = await AsyncStorage.getItem(CATEGORY_KEY);
@@ -83,6 +111,15 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
 
   const fetchAll = useCallback(async () => {
     try {
+      // Re-sync persisted filters whenever the screen becomes active.
+      // This avoids passing non-serializable callbacks through navigation params.
+      try {
+        const f = await AsyncStorage.getItem(FILTERS_KEY);
+        setFilters(f ? JSON.parse(f) : {});
+      } catch {
+        setFilters({});
+      }
+
       const userId = await AsyncStorage.getItem('userId');
       const [petList, postList] = await Promise.all([
         api.getAllPets(),
@@ -136,6 +173,60 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
   useFocusEffect(useCallback(() => { fetchAll(); }, [fetchAll]));
   const onRefresh = () => { setRefreshing(true); fetchAll(); };
 
+  // [ANNOUNCEMENTS-REALTIME] Set up socket connection to listen for new announcements
+  useEffect(() => {
+    const setupAnnouncements = async () => {
+      const userId = await AsyncStorage.getItem('userId');
+      userIdRef.current = userId;
+
+      // Disconnect previous socket if any
+      socketRef.current?.disconnect();
+
+      const socket = io(SOCKET_URL);
+      socketRef.current = socket;
+
+      // Listen for real-time announcements
+      socket.on('new_announcement', async (announcement: any) => {
+        try {
+          const lastSeenKey = `${userId}_last_announcement_seen`;
+          const lastSeenTime = await AsyncStorage.getItem(lastSeenKey);
+          const announcementTime = new Date(announcement.created_at);
+
+          // Push local notification
+          await pushLocalNotification(
+            {
+              title: announcement.title,
+              desc: announcement.content,
+              time: announcement.created_at,
+              icon: 'megaphone-outline',
+              type: 'announcement',
+              source: 'Administrator',
+            },
+            `announcement_${announcement.id}`
+          );
+
+          // Update badge count
+          const raw = await AsyncStorage.getItem('snoutscout_notifications');
+          const notifs: any[] = raw ? JSON.parse(raw) : [];
+          const unreadCount = notifs.filter((n: any) => !n.read).length;
+          setNotifCount(unreadCount);
+
+          // Update last seen time
+          await AsyncStorage.setItem(lastSeenKey, new Date().toISOString());
+        } catch (err) {
+          console.error('[ANNOUNCEMENTS-REALTIME] Error handling new announcement:', err);
+        }
+      });
+    };
+
+    setupAnnouncements();
+
+    // Cleanup on unmount
+    return () => {
+      socketRef.current?.disconnect();
+    };
+  }, []);
+
   const onSelectCategory = async (key: string) => {
     setSelectedCategory(key);
     AsyncStorage.setItem(CATEGORY_KEY, key).catch(() => {});
@@ -180,7 +271,7 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
       if (filters.maxPrice != null && (p.price ?? 0) > filters.maxPrice) return false;
       if (filters.city && !(p.location || '').toLowerCase().includes(filters.city.toLowerCase())) return false;
       if (filters.ageBucket) {
-        const a = p.age ?? 0;
+        const a = parseAgeYears(p.age);
         const ok =
           (filters.ageBucket === 'puppy' && a < 1) ||
           (filters.ageBucket === 'young' && a >= 1 && a < 3) ||
@@ -218,10 +309,7 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
     navigation.navigate('FilterScreen', {
       initialFilters: filters,
       pets,
-      onApply: (next: Filters) => {
-        setFilters(next);
-        AsyncStorage.setItem(FILTERS_KEY, JSON.stringify(next)).catch(() => {});
-      },
+      filtersStorageKey: FILTERS_KEY,
     });
   };
 
@@ -244,7 +332,7 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
       <View style={[styles.greetRow, { paddingHorizontal: 20 }]}>
         <View>
           <Text style={[styles.greetSmall, { color: colors.textSecondary }]}>{getGreeting()},</Text>
-          <Text style={[styles.greetBig, { color: colors.textPrimary }]}>{firstName(profile?.full_name)}!</Text>
+          <Text style={[styles.greetBig, { color: colors.textPrimary }]}>{`${firstName(profile?.full_name)}!`}</Text>
         </View>
         <View style={styles.headerActions}>
           {/* [DASHBOARD-REDESIGN] notification badge */}
@@ -289,6 +377,11 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
         </View>
         <Pressable style={[styles.filterBtn, { backgroundColor: colors.accent }]} onPress={openFilter}>
           <Ionicons name="options" size={20} color="#FFF" />
+          {activeFilterCount > 0 && (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{activeFilterCount > 9 ? '9+' : activeFilterCount}</Text>
+            </View>
+          )}
         </Pressable>
       </View>
 
@@ -318,7 +411,7 @@ export default function DashboardScreen({ navigation, onProfilePress }: Props) {
               ]}
             >
               <Text style={[styles.chipText, { color: active ? '#FFF' : colors.textPrimary }]}>{opt.key}</Text>
-              <Text style={[styles.chipCount, { color: active ? '#FFF' : colors.textSecondary }]}> {count}</Text>
+              <Text style={[styles.chipCount, { color: active ? '#FFF' : colors.textSecondary }]}>  {` ${count ?? 0}`}</Text>
             </Pressable>
           );
         })}
@@ -394,6 +487,8 @@ const styles = StyleSheet.create({
   searchPill: { flex: 1, flexDirection: 'row', alignItems: 'center', height: 44, borderRadius: 22, paddingHorizontal: 14, borderWidth: 1, gap: 8 },
   searchInput: { flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 14 },
   filterBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  filterBadge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: '#111827', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4 },
+  filterBadgeText: { color: '#FFF', fontSize: 10, fontFamily: 'DMSans_700Bold' },
   chip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, marginRight: 8 },
   chipText: { fontSize: 13, fontFamily: 'DMSans_700Bold' },
   chipCount: { fontSize: 11, fontFamily: 'DMSans_400Regular' },

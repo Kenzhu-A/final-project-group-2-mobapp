@@ -223,23 +223,7 @@ export const api = {
     });
   },
 
-  // --- GOOGLE AUTH API ---
-  getGoogleAuthUrl: async () => {
-    const response = await fetch(`${BASE_URL}/auth/google`);
-    if (!response.ok) throw new Error('Google auth failed');
-    return await response.json();
-  },
-
-  verifyGoogleToken: async (access_token: string) => {
-    const response = await fetch(`${BASE_URL}/auth/google/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Failed to verify Google token');
-    return data.userId;
-  },
+  // Google Auth removed from frontend (email/password only)
   deleteAccount: async (userId: string) => {
     const response = await fetch(`${BASE_URL}/users/${userId}`, { method: 'DELETE' });
     if (!response.ok) throw new Error('Failed to delete account');
