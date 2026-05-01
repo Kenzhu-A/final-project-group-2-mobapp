@@ -5,11 +5,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import CustomInput from '../components/CustomInput';
-import PrimaryButton from '../components/PrimaryButton';
-import { useTheme } from '../context/ThemeContext';
-import { Validators } from '../utils/validators';
-import { api } from '../services/api';
+import CustomInput from '../../components/CustomInput';
+import PrimaryButton from '../../components/PrimaryButton';
+import { useTheme } from '../../context/ThemeContext';
+import { Validators } from '../../utils/validators';
+import { api } from '../../services/api';
 
 export default function SignupScreen({ navigation }: any) {
   const { colors } = useTheme();

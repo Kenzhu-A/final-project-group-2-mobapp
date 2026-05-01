@@ -5,10 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
-import CustomInput from '../components/CustomInput';
-import PrimaryButton from '../components/PrimaryButton';
-import { useTheme } from '../context/ThemeContext';
-import { api } from '../services/api';
+import CustomInput from '../../components/CustomInput';
+import PrimaryButton from '../../components/PrimaryButton';
+import { useTheme } from '../../context/ThemeContext';
+import { api } from '../../services/api';
 
 export default function EditProfileScreen({ navigation }: any) {
   const { colors } = useTheme();
@@ -116,7 +116,7 @@ export default function EditProfileScreen({ navigation }: any) {
                 <ActivityIndicator color={colors.primary}/>
               </View>
             ) : (
-              <Image source={user?.avatar_url ? { uri: user.avatar_url } : require('../../assets/adaptive-icon.png')} style={[styles.avatarImage, { borderColor: colors.primary }]} />
+              <Image source={user?.avatar_url ? { uri: user.avatar_url } : require('../../../assets/adaptive-icon.png')} style={[styles.avatarImage, { borderColor: colors.primary }]} />
             )}
             <Pressable style={[styles.editBadge, { backgroundColor: colors.primary, borderColor: colors.surface }]} onPress={handleEditAvatar}>
               <Ionicons name="camera" size={16} color="#FFF" />

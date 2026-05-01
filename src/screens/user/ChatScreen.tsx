@@ -18,8 +18,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { io, Socket } from "socket.io-client";
 import * as Clipboard from "expo-clipboard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useTheme } from "../context/ThemeContext";
-import { api, BASE_URL } from "../services/api";
+import { useTheme } from "../../context/ThemeContext";
+import { api, BASE_URL } from "../../services/api";
 
 const SOCKET_URL = BASE_URL.replace("/api", "");
 const CHAT_READ_KEY = "snoutscout_chat_read_map";

@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, Pressable, Alert, Image, Keyboard } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import OtpInputBox from '../components/OtpInputBox';
-import PrimaryButton from '../components/PrimaryButton';
-import { useTheme } from '../context/ThemeContext';
-import { api } from '../services/api';
+import OtpInputBox from '../../components/OtpInputBox';
+import PrimaryButton from '../../components/PrimaryButton';
+import { useTheme } from '../../context/ThemeContext';
+import { api } from '../../services/api';
 
 export default function OtpVerificationScreen({ route, navigation }: any) {
   const { colors } = useTheme();
@@ -64,7 +64,7 @@ export default function OtpVerificationScreen({ route, navigation }: any) {
         </Pressable>
       </View>
       <View style={styles.content}>
-        <Image source={require('../../assets/resetdog.png')} style={styles.image} resizeMode="contain" />
+        <Image source={require('../../../assets/resetdog.png')} style={styles.image} resizeMode="contain" />
         
         <Text style={[styles.title, { color: colors.textPrimary }]}>Enter OTP</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>

@@ -4,8 +4,8 @@ import { View, Text, StyleSheet, Pressable, TextInput, Image, Alert } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../context/ThemeContext';
-import { api } from '../services/api';
+import { useTheme } from '../../context/ThemeContext';
+import { api } from '../../services/api';
 
 export default function DeletePetPostScreen({ route, navigation }: any) {
   const { pet } = route.params;

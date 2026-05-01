@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, Pressable, Switch, ScrollView, Alert } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../context/ThemeContext';
-import { registerForPushNotificationsAsync } from '../utils/notifications';
-import { api } from '../services/api';
+import { useTheme } from '../../context/ThemeContext';
+import { registerForPushNotificationsAsync } from '../../utils/notifications';
+import { api } from '../../services/api';
 
 export default function SettingsScreen({ navigation }: any) {
   const { isDarkMode, toggleTheme, colors } = useTheme(); 

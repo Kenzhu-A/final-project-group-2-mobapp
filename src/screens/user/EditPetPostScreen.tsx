@@ -6,13 +6,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../context/ThemeContext';
-import { api } from '../services/api';
-import CustomInput from '../components/CustomInput';
-import CustomDropdown from '../components/CustomDropdown';
-import PrimaryButton from '../components/PrimaryButton';
-import { useImageUploader } from '../hooks/useImageUploader';
-import UploadingImageTile from '../components/UploadingImageTile';
+import { useTheme } from '../../context/ThemeContext';
+import { api } from '../../services/api';
+import CustomInput from '../../components/CustomInput';
+import CustomDropdown from '../../components/CustomDropdown';
+import PrimaryButton from '../../components/PrimaryButton';
+import { useImageUploader } from '../../hooks/useImageUploader';
+import UploadingImageTile from '../../components/UploadingImageTile';
 
 const CATEGORIES = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Other'];
 const GENDERS = ['Male', 'Female', 'Unknown'];

@@ -5,13 +5,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import CustomInput from '../components/CustomInput';
-import PrimaryButton from '../components/PrimaryButton';
-import { useTheme } from '../context/ThemeContext';
-import { Validators } from '../utils/validators';
-import { api } from '../services/api';
+import CustomInput from '../../components/CustomInput';
+import PrimaryButton from '../../components/PrimaryButton';
+import { useTheme } from '../../context/ThemeContext';
+import { Validators } from '../../utils/validators';
+import { api } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { registerForPushNotificationsAsync } from '../utils/notifications'; // [PUSH-NOTIF]
+import { registerForPushNotificationsAsync } from '../../utils/notifications'; // [PUSH-NOTIF]
 
 export default function LoginScreen({ navigation }: any) {
   const { colors } = useTheme();
@@ -90,8 +90,8 @@ export default function LoginScreen({ navigation }: any) {
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
             <View style={styles.logoContainer}>
-              <Image source={require('../../assets/dog-logo.png')} style={styles.logoImage} />
-              <Image source={require('../../assets/snoutscout.png')} style={styles.textLogoImage} resizeMode="contain" />
+              <Image source={require('../../../assets/dog-logo.png')} style={styles.logoImage} />
+              <Image source={require('../../../assets/snoutscout.png')} style={styles.textLogoImage} resizeMode="contain" />
               <Text style={[styles.taglineText, { color: colors.textSecondary }]}>Find your best companion.</Text>
             </View>
 
