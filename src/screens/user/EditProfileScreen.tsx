@@ -116,7 +116,7 @@ export default function EditProfileScreen({ navigation }: any) {
                 <ActivityIndicator color={colors.primary}/>
               </View>
             ) : (
-              <Image source={user?.avatar_url ? { uri: user.avatar_url } : require('../../assets/adaptive-icon.png')} style={[styles.avatarImage, { borderColor: colors.primary }]} />
+              <Image source={user?.avatar_url ? { uri: user.avatar_url } : require('../../../assets/adaptive-icon.png')} style={[styles.avatarImage, { borderColor: colors.primary }]} />
             )}
             <Pressable style={[styles.editBadge, { backgroundColor: colors.primary, borderColor: colors.surface }]} onPress={handleEditAvatar}>
               <Ionicons name="camera" size={16} color="#FFF" />

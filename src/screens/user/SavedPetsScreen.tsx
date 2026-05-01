@@ -7,11 +7,11 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../context/ThemeContext';
-import { useSavedPets } from '../hooks/useSavedPets';
-import { api } from '../services/api';
-import PetCard from '../components/PetCard';
-import GeneralPostCard from '../components/GeneralPostCard';
+import { useTheme } from '../../context/ThemeContext';
+import { useSavedPets } from '../../hooks/useSavedPets';
+import { api } from '../../services/api';
+import PetCard from '../../components/PetCard';
+import GeneralPostCard from '../../components/GeneralPostCard';
 
 type Tab = 'pets' | 'posts';
 

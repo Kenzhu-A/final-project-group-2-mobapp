@@ -262,7 +262,7 @@ export default function PetDetailsScreen({ route, navigation }: any) {
             onPress={() => pet.owner_id && navigation.navigate('ViewUserProfileScreen', { userId: pet.owner_id })}
           >
             <Image
-              source={pet.owner?.avatar_url ? { uri: pet.owner.avatar_url } : require('../../assets/adaptive-icon.png')}
+              source={pet.owner?.avatar_url ? { uri: pet.owner.avatar_url } : require('../../../assets/adaptive-icon.png')}
               style={styles.ownerAvatar}
             />
             <View style={{ flex: 1 }}>

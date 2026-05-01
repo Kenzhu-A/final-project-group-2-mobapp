@@ -162,7 +162,7 @@ export default function AdminPetsScreen({ navigation, route }: any) {
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                     <View style={[styles.statusDot, { backgroundColor: statusColor(status) }]} />
                     <Text style={[styles.statusLabel, { color: statusColor(status) }]}>
-                      {status.replace(/^./, (c) => c.toUpperCase())}
+                      {status.replace(/^./, (c: string) => c.toUpperCase())}
                     </Text>
                   </View>
                 </View>

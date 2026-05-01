@@ -257,7 +257,7 @@ export default function LostAndFoundScreen({ navigation }: any) {
                 <View style={styles.cardHeader}>
                   <View style={styles.headerLeft}>
                     <Image
-                      source={item.owner?.avatar_url ? { uri: item.owner.avatar_url } : require('../../assets/adaptive-icon.png')}
+                      source={item.owner?.avatar_url ? { uri: item.owner.avatar_url } : require('../../../assets/adaptive-icon.png')}
                       style={styles.avatar}
                     />
                     <View>

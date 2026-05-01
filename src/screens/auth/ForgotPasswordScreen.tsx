@@ -42,7 +42,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
         </Pressable>
       </View>
       <View style={styles.content}>
-        <Image source={require('../../assets/resetdog.png')} style={styles.image} resizeMode="contain" />
+        <Image source={require('../../../assets/resetdog.png')} style={styles.image} resizeMode="contain" />
         
         <Text style={[styles.title, { color: colors.textPrimary }]}>Forgot Password?</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>

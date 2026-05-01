@@ -6,9 +6,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../context/ThemeContext';
-import { api } from '../services/api';
-import PetCard from '../components/PetCard';
+import { useTheme } from '../../context/ThemeContext';
+import { api } from '../../services/api';
+import PetCard from '../../components/PetCard';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const BANNER_H = 130;

@@ -294,7 +294,7 @@ export default function PetChatsScreen({ navigation, onChatEnter }: any) {
                 source={
                   item.partnerAvatar
                     ? { uri: item.partnerAvatar }
-                    : require("../../assets/adaptive-icon.png")
+                    : require("../../../assets/adaptive-icon.png")
                 }
                 style={styles.convoAvatar}
               />

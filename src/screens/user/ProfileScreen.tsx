@@ -99,7 +99,7 @@ export default function ProfileScreen({ navigation, handleSignOut, setActiveTab 
           </View>
         ) : (
           <Image 
-            source={user?.avatar_url ? { uri: user.avatar_url } : require('../../assets/adaptive-icon.png')} 
+            source={user?.avatar_url ? { uri: user.avatar_url } : require('../../../assets/adaptive-icon.png')} 
             style={[styles.avatarImage, { borderColor: colors.primary }]} 
           />
         )}

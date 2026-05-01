@@ -90,8 +90,8 @@ export default function LoginScreen({ navigation }: any) {
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
             <View style={styles.logoContainer}>
-              <Image source={require('../../assets/dog-logo.png')} style={styles.logoImage} />
-              <Image source={require('../../assets/snoutscout.png')} style={styles.textLogoImage} resizeMode="contain" />
+              <Image source={require('../../../assets/dog-logo.png')} style={styles.logoImage} />
+              <Image source={require('../../../assets/snoutscout.png')} style={styles.textLogoImage} resizeMode="contain" />
               <Text style={[styles.taglineText, { color: colors.textSecondary }]}>Find your best companion.</Text>
             </View>
 
