@@ -23,6 +23,12 @@ import { api, BASE_URL } from "../services/api";
 
 const SOCKET_URL = BASE_URL.replace("/api", "");
 const CHAT_READ_KEY = "snoutscout_chat_read_map";
+const REPORT_REASONS = [
+  "Harassment or bullying",
+  "Spam or scam",
+  "Inappropriate messages",
+  "Other concern",
+]; // [MESSAGING-FIX]
 
 function getMessageId(m: any): string | undefined {
   return m?.id ?? m?.message_id ?? m?.messageId ?? m?.uuid;
@@ -56,7 +62,9 @@ export default function ChatScreen({ route, navigation }: any) {
   const [showReportUserModal, setShowReportUserModal] = useState(false); // [CHAT-MENU]
   const [showDeleteConversationModal, setShowDeleteConversationModal] =
     useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [reportReason, setReportReason] = useState(REPORT_REASONS[0]); // [MESSAGING-FIX]
+  const [reportDetails, setReportDetails] = useState(""); // [MESSAGING-FIX]
+  const [submittingReport, setSubmittingReport] = useState(false); // [MESSAGING-FIX]
 
   const socketRef = useRef<Socket | null>(null);
   const flatListRef = useRef<FlatList>(null);
@@ -280,6 +288,36 @@ export default function ChatScreen({ route, navigation }: any) {
       },
     ]);
   };
+
+  const handleReportUser = async () => {
+    const currentUserId = senderIdRef.current || (await AsyncStorage.getItem("userId"));
+    if (!currentUserId) {
+      Alert.alert("Error", "Unable to identify current user. Please re-login and try again.");
+      return;
+    }
+    if (!reportReason.trim()) {
+      Alert.alert("Missing reason", "Please choose a reason before submitting.");
+      return;
+    }
+
+    setSubmittingReport(true);
+    try {
+      await api.createReport({
+        report_type: "user",
+        item_id: receiverId,
+        reporter_id: currentUserId,
+        reason: reportReason,
+        description: reportDetails.trim() || `Reported from conversation with ${receiverName}`,
+      });
+      setShowReportUserModal(false);
+      setReportDetails("");
+      Alert.alert("Report submitted", "An admin will review this conversation.");
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Failed to submit report.");
+    } finally {
+      setSubmittingReport(false);
+    }
+  }; // [MESSAGING-FIX]
 
   const handleDeleteConversation = () => {
     (async () => {
@@ -538,6 +576,86 @@ export default function ChatScreen({ route, navigation }: any) {
         </TouchableWithoutFeedback>
       </Modal>
 
+      {/* [MESSAGING-FIX] CHAT HEADER MENU */}
+      <Modal visible={showChatMenu} transparent animationType="fade">
+        <TouchableWithoutFeedback onPress={() => setShowChatMenu(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={[styles.optionsMenu, { backgroundColor: colors.surface }]}>
+                <Pressable
+                  style={[styles.optionItem, { borderBottomColor: colors.border }]}
+                  onPress={() => {
+                    setShowChatMenu(false);
+                    setShowReportUserModal(true);
+                  }}
+                >
+                  <Ionicons name="flag-outline" size={20} color={colors.textPrimary} style={styles.optionIcon} />
+                  <Text style={[styles.optionText, { color: colors.textPrimary }]}>Report User</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.optionItem, { borderBottomWidth: 0 }]}
+                  onPress={() => {
+                    setShowChatMenu(false);
+                    setShowDeleteConversationModal(true);
+                  }}
+                >
+                  <Ionicons name="trash-outline" size={20} color="#D32F2F" style={styles.optionIcon} />
+                  <Text style={[styles.optionText, { color: "#D32F2F" }]}>Delete Conversation</Text>
+                </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* [MESSAGING-FIX] REPORT USER MODAL */}
+      <Modal visible={showReportUserModal} transparent animationType="fade">
+        <TouchableWithoutFeedback onPress={() => setShowReportUserModal(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={[styles.deleteConversationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={styles.reportIconWrapper}>
+                  <Ionicons name="flag-outline" size={28} color={colors.primary} />
+                </View>
+                <Text style={[styles.deleteConversationTitle, { color: colors.textPrimary }]}>Report {receiverName}</Text>
+                <Text style={[styles.deleteConversationSub, { color: colors.textSecondary }]}>Admins will review this conversation.</Text>
+
+                {REPORT_REASONS.map((reason) => {
+                  const active = reportReason === reason;
+                  return (
+                    <Pressable
+                      key={reason}
+                      onPress={() => setReportReason(reason)}
+                      style={[styles.reasonChoice, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary + "14" : colors.background }]}
+                    >
+                      <Text style={[styles.reasonChoiceText, { color: active ? colors.primary : colors.textPrimary }]}>{reason}</Text>
+                    </Pressable>
+                  );
+                })}
+
+                <TextInput
+                  style={[styles.reportDetailsInput, { borderColor: colors.border, color: colors.textPrimary, backgroundColor: colors.background }]}
+                  placeholder="Add details for the admin review"
+                  placeholderTextColor={colors.textSecondary}
+                  value={reportDetails}
+                  onChangeText={setReportDetails}
+                  multiline
+                />
+
+                <View style={styles.deleteConversationBtns}>
+                  <Pressable style={[styles.modalBtn, { borderColor: colors.border }]} onPress={() => setShowReportUserModal(false)}>
+                    <Text style={[styles.modalBtnText, { color: colors.textPrimary }]}>Cancel</Text>
+                  </Pressable>
+                  <Pressable style={[styles.modalBtn, { backgroundColor: colors.primary, borderColor: colors.primary, opacity: submittingReport ? 0.6 : 1 }]} onPress={handleReportUser} disabled={submittingReport}>
+                    <Text style={[styles.modalBtnText, { color: "#FFF" }]}>{submittingReport ? "Submitting..." : "Submit report"}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
       <Modal
         visible={showDeleteConversationModal}
         transparent
@@ -575,8 +693,7 @@ export default function ChatScreen({ route, navigation }: any) {
                     { color: colors.textSecondary },
                   ]}
                 >
-                  This conversation will be permanently deleted for both you and{" "}
-                  {receiverName}. This cannot be undone.
+                  This conversation will be removed from your message list. {receiverName} can still see their copy.
                 </Text>
 
                 <View style={styles.deleteConversationBtns}>
@@ -735,4 +852,31 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalBtnText: { fontSize: 14, fontFamily: "DMSans_700Bold" },
+  reportIconWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#FFF3E8",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginBottom: 12,
+  },
+  reasonChoice: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+  },
+  reasonChoiceText: { fontSize: 13, fontFamily: "DMSans_700Bold" },
+  reportDetailsInput: {
+    minHeight: 84,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontFamily: "DMSans_400Regular",
+    textAlignVertical: "top",
+  },
 });

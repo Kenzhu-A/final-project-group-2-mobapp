@@ -508,6 +508,13 @@ export const api = {
   },
 
   // [ADMIN-CONVO-INSPECT] admin conversation inspection methods
+  getAdminConversations: async () => {
+    // [ADMIN-CONVO-INSPECT] all conversation summaries for moderation dashboard
+    const response = await fetch(`${BASE_URL}/admin/conversations`);
+    if (!response.ok) throw new Error('Failed to fetch admin conversations');
+    return await response.json();
+  },
+
   getUserConversations: async (userId: string) => {
     const response = await fetch(`${BASE_URL}/admin/users/${userId}/conversations`);
     if (!response.ok) throw new Error('Failed to fetch user conversations');

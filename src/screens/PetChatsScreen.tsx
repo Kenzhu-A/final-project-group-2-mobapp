@@ -125,14 +125,10 @@ export default function PetChatsScreen({ navigation, onChatEnter }: any) {
     }
   }
 
+  // [MESSAGING-FIX] Incoming messages should stay unread until the user opens that conversation.
   if (newMessage.sender_id !== currentUserId) {
-    try {
-      const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
-      const map = readRaw ? JSON.parse(readRaw) : {};
-      map[partnerId] = new Date().toISOString();
-      await AsyncStorage.setItem(CHAT_READ_KEY, JSON.stringify(map));
-      setReadMap(map);
-    } catch {}
+    const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
+    setReadMap(readRaw ? JSON.parse(readRaw) : {});
   }
 });
 

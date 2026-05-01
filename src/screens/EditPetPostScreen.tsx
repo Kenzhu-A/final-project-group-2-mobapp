@@ -13,6 +13,7 @@ import CustomDropdown from '../components/CustomDropdown';
 import PrimaryButton from '../components/PrimaryButton';
 import { useImageUploader } from '../hooks/useImageUploader';
 import UploadingImageTile from '../components/UploadingImageTile';
+import { PET_NAME_MAX_LENGTH, sanitizePetName, validatePetName } from '../utils/petNameValidation'; // [PET-NAME-VALIDATION]
 
 const CATEGORIES = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Other'];
 const GENDERS = ['Male', 'Female', 'Unknown'];
@@ -62,7 +63,15 @@ export default function EditPetPostScreen({ route, navigation }: any) {
 
   const onSave = async () => {
     const resolvedCategory = form.category === 'Other' ? otherCategoryText.trim() : form.category;
-    if (!form.pet_name || !form.location || !form.age || !resolvedCategory) {
+    // [PET-NAME-VALIDATION] edits use the same rules as create listing
+    const petNameError = validatePetName(form.pet_name);
+    if (petNameError) {
+      Alert.alert('Invalid Pet Name', petNameError);
+      return;
+    }
+    const cleanPetName = form.pet_name.trim();
+
+    if (!form.location || !form.age || !resolvedCategory) {
       const msg = form.category === 'Other' && !otherCategoryText.trim()
         ? 'Please specify the pet type when selecting "Other".'
         : 'Name, location, and age are required.';
@@ -75,7 +84,7 @@ export default function EditPetPostScreen({ route, navigation }: any) {
       const image_urls = uploader.urls;
       await api.updatePetPost(pet.id, {
         category: resolvedCategory,
-        pet_name: form.pet_name,
+        pet_name: cleanPetName, // [PET-NAME-VALIDATION]
         breed: form.breed,
         age: `${form.age} ${ageUnitState}`,
         price: form.price ? Number(form.price) : 0,
@@ -136,7 +145,13 @@ export default function EditPetPostScreen({ route, navigation }: any) {
           {form.category === 'Other' && (
             <CustomInput label="Specify Pet Type *" placeholder="e.g., Hamster, Turtle, Parrot" value={otherCategoryText} onChangeText={setOtherCategoryText} />
           )}
-          <CustomInput label="Pet name *" placeholder="Buddy" value={form.pet_name} onChangeText={(t: string) => setForm({ ...form, pet_name: t })} />
+          <CustomInput
+            label="Pet name *"
+            placeholder="Buddy"
+            value={form.pet_name}
+            onChangeText={(t: string) => setForm({ ...form, pet_name: sanitizePetName(t) })}
+            maxLength={PET_NAME_MAX_LENGTH}
+          />
           <CustomInput label="Breed" placeholder="e.g., Golden Retriever" value={form.breed} onChangeText={(t: string) => setForm({ ...form, breed: t })} />
 
           {/* [AGE-UNIT] separate age number and unit dropdowns */}

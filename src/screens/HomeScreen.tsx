@@ -23,6 +23,7 @@ import SavedPetsScreen from './SavedPetsScreen';
 import { useTheme } from '../context/ThemeContext';
 import { api, BASE_URL } from '../services/api';
 import { useSavedPets } from '../hooks/useSavedPets'; // [SAVED-PETS]
+import { PET_NAME_MAX_LENGTH, sanitizePetName, validatePetName } from '../utils/petNameValidation'; // [PET-NAME-VALIDATION]
 
 const SOCKET_URL = BASE_URL.replace('/api', '');
 const CHAT_READ_KEY = 'snoutscout_chat_read_map';
@@ -120,6 +121,23 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   }, [activeTab]);
 
+  // [MESSAGING-FIX] Recalculate unread messages from backend + local read map instead of guessing.
+  const refreshUnreadMessageCount = useCallback(async () => {
+    const userId = userIdRef.current || await AsyncStorage.getItem('userId');
+    if (!userId) return;
+    userIdRef.current = userId;
+
+    const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
+    const readMap = readRaw ? JSON.parse(readRaw) : {};
+    const conversations = await api.getConversations(userId);
+    const unreadCount = (conversations || []).filter((c: any) => {
+      const latestTs = c.createdAt || c.created_at;
+      const readTs = readMap[c.partnerId];
+      return !readTs || new Date(latestTs).getTime() > new Date(readTs).getTime();
+    }).length;
+    setUnreadMessageCount(unreadCount);
+  }, []);
+
   // [MESSAGE-BADGE] Set up real-time message badge
   useEffect(() => {
     const setupMessageBadge = async () => {
@@ -134,44 +152,16 @@ export default function HomeScreen({ navigation, route }: any) {
       socketRef.current = socket;
       socket.emit('register', userId);
 
-      // Calculate initial unread count
-      const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
-      const readMap = readRaw ? JSON.parse(readRaw) : {};
-      
-      // Get all conversations to calculate unread count
       try {
-        const conversations = await api.getConversations(userId);
-        const unreadCount = conversations.filter((c: any) => {
-          const latestTs = c.createdAt || c.created_at;
-          const readTs = readMap[c.partnerId];
-          return !readTs || new Date(latestTs).getTime() > new Date(readTs).getTime();
-        }).length;
-        setUnreadMessageCount(unreadCount);
+        await refreshUnreadMessageCount();
       } catch (err) {
-        console.error('[MESSAGE-BADGE] Failed to get conversations:', err);
+        console.error('[MESSAGE-BADGE] Failed to refresh conversations:', err);
       }
 
       // Listen for incoming messages and update badge
       socket.on('receive_message', async (newMessage: any) => {
-        // Only count if it's from someone else (not from current user)
         if (newMessage.sender_id !== userId) {
-          const partnerId =
-            newMessage.sender_id === userId ? newMessage.receiver_id : newMessage.sender_id;
-
-          // Update readMap so receiver sees it as unread
-          const readRaw = await AsyncStorage.getItem(CHAT_READ_KEY);
-          const readMap = readRaw ? JSON.parse(readRaw) : {};
-          
-          // Check if this conversation was already unread
-          const latestTs = newMessage.created_at;
-          const readTs = readMap[partnerId];
-          const wasUnread = !readTs || new Date(latestTs).getTime() > new Date(readTs).getTime();
-
-          if (wasUnread) {
-            // Only increment if it's newly unread
-            const unreadCount = (prev: number) => prev + 1;
-            setUnreadMessageCount(prev => prev + 1);
-          }
+          await refreshUnreadMessageCount(); // [MESSAGING-FIX]
         }
       });
     };
@@ -182,7 +172,7 @@ export default function HomeScreen({ navigation, route }: any) {
     return () => {
       socketRef.current?.disconnect();
     };
-  }, []);
+  }, [refreshUnreadMessageCount]);
 
   const handleTabChange = (tab: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -191,8 +181,8 @@ export default function HomeScreen({ navigation, route }: any) {
 
   // [MESSAGE-BADGE] Callback to reset unread badge when entering ChatScreen
   const resetMessageBadge = useCallback(() => {
-    setUnreadMessageCount(0);
-  }, []);
+    refreshUnreadMessageCount().catch(() => {}); // [MESSAGING-FIX]
+  }, [refreshUnreadMessageCount]);
 
   const fetchLocations = async (query: string) => {
     setLocationQuery(query);
@@ -282,7 +272,15 @@ export default function HomeScreen({ navigation, route }: any) {
   const handleSubmitAdoptionPost = async () => {
     // [OTHER-CATEGORY] resolve the actual category before validation
     const resolvedCategory = petForm.category === 'Other' ? otherCategoryText.trim() : petForm.category;
-    if (!petForm.petName || !petForm.location || !petForm.age || !resolvedCategory || !petForm.breed) {
+    // [PET-NAME-VALIDATION] enforce real pet names before submitting to backend
+    const petNameError = validatePetName(petForm.petName);
+    if (petNameError) {
+      Alert.alert('Invalid Pet Name', petNameError);
+      return;
+    }
+    const cleanPetName = petForm.petName.trim();
+
+    if (!petForm.location || !petForm.age || !resolvedCategory || !petForm.breed) {
       const msg = petForm.category === 'Other' && !otherCategoryText.trim()
         ? 'Please specify the pet type when selecting "Other" as category.'
         : 'Please fill in all required fields (Category, Name, Breed, Age, Location).';
@@ -304,7 +302,7 @@ export default function HomeScreen({ navigation, route }: any) {
       await api.createPetPost({
         owner_id: userId, category: resolvedCategory,
         image_url: cover, image_urls,                // [DASHBOARD-REDESIGN]
-        pet_name: petForm.petName, breed: petForm.breed,
+        pet_name: cleanPetName, breed: petForm.breed, // [PET-NAME-VALIDATION]
         age: `${petForm.age} ${ageUnit}`, price: petForm.price ? Number(petForm.price) : 0,
         location: petForm.location, description: petForm.description,
         medical_history: petForm.medicalHistory, behavior: petForm.behavior, personality: petForm.personality,
@@ -390,13 +388,19 @@ export default function HomeScreen({ navigation, route }: any) {
                   {petForm.category === 'Other' && (
                     <CustomInput label="Specify Pet Type *" placeholder="e.g., Hamster, Turtle, Parrot" value={otherCategoryText} onChangeText={setOtherCategoryText} />
                   )}
-                  <CustomInput label="Pet Name *" placeholder="e.g., Buddy" value={petForm.petName} onChangeText={t => setPetForm({...petForm, petName: t})} />
+                  <CustomInput
+                    label="Pet Name *"
+                    placeholder="e.g., Buddy"
+                    value={petForm.petName}
+                    onChangeText={t => setPetForm({ ...petForm, petName: sanitizePetName(t) })}
+                    maxLength={PET_NAME_MAX_LENGTH}
+                  />
                   <CustomDropdown label="Breed *" value={petForm.breed} options={getBreedOptions()} onSelect={(val) => setPetForm({...petForm, breed: val})} />
                   
                   {/* [AGE-UNIT] separate age number and unit dropdowns */}
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between'}}>
                     <View style={{ flex: 1, marginRight: 8 }}><CustomInput label="Age *" placeholder="e.g., 2" value={petForm.age} onChangeText={t => setPetForm({...petForm, age: t})} keyboardType="numeric" /></View>
-                    <View style={{ flex: 1, marginLeft: 8 }}><CustomDropdown label="Unit" value={ageUnit} options={['Years', 'Months']} onSelect={(val) => setAgeUnit(val)} /></View>
+                    <View style={{ flex: 1, marginLeft: 8}}><CustomDropdown label="Unit" value={ageUnit} options={['Years', 'Months']} onSelect={(val) => setAgeUnit(val)} /></View>
                   </View>
 
                   <CustomInput label="Price (PHP)" placeholder="Leave blank if free" value={petForm.price} onChangeText={t => setPetForm({...petForm, price: t})} keyboardType="numeric" />
@@ -404,7 +408,7 @@ export default function HomeScreen({ navigation, route }: any) {
                   <View style={styles.autocompleteContainer}>
                     <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>Location (City/Municipality) *</Text>
                     <TextInput 
-                      style={[styles.autocompleteInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+                      style={[styles.autocompleteInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
                       placeholder="Start typing a Philippine city..."
                       placeholderTextColor={colors.textSecondary}
                       value={locationQuery}

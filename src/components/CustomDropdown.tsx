@@ -20,7 +20,7 @@ export default function CustomDropdown({ label, value, onSelect, options, placeh
       {label ? <Text style={[styles.label, { color: colors.textPrimary }]}>{label}</Text> : null}
       
       <Pressable 
-        style={[styles.dropdownButton, { backgroundColor: colors.background, borderColor: colors.border }]} 
+        style={[styles.dropdownButton, { backgroundColor: colors.surface, borderColor: colors.border }]} 
         onPress={() => setModalVisible(true)}
       >
         <Text style={[styles.dropdownText, { color: value ? colors.textPrimary : colors.textSecondary }]}>

@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -63,9 +63,16 @@ export default function AddNewUsersMessages({ navigation }: any) {
               style={[styles.userCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={() => navigation.replace('ChatScreen', { receiverId: item.id, receiverName: item.full_name || item.email, senderId: currentUserId })}
             >
-              <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person" size={24} color="#FFF" />
-              </View>
+              {item.avatar_url ? (
+                <Image
+                  source={{ uri: item.avatar_url }}
+                  style={styles.userAvatar}
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Ionicons name="person" size={24} color="#FFF" />
+                </View>
+              )}
               <View>
                 <Text style={[styles.userName, { color: colors.textPrimary }]}>{item.full_name || 'User'}</Text>
                 <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{item.email}</Text>
@@ -86,6 +93,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 15 },
   userCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1 },
   avatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#F26419', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  userAvatar: { width: 50, height: 50, borderRadius: 25, marginRight: 16, backgroundColor: '#E9ECEF' }, // [MESSAGING-FIX]
   userName: { fontSize: 16, fontFamily: 'DMSans_700Bold' },
   userEmail: { fontSize: 13, fontFamily: 'DMSans_400Regular', marginTop: 2 },
 });
