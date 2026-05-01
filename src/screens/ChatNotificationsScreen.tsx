@@ -21,6 +21,7 @@ export interface AppNotification {
   icon: string;         // Ionicons name
   read: boolean;
   type?: 'new_message' | 'announcement' | 'system';
+  source?: string;      // e.g., "Administrator", "System", sender name
   senderId?: string;
   senderName?: string;
 }
@@ -58,11 +59,10 @@ export default function ChatNotificationsScreen({ navigation }: any) {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const messageNotifs = notifications
-    .filter((n) => isMessageNotif(n))
+  const allNotifs = notifications
     .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 
-  const [latest, ...rest] = messageNotifs;
+  const [latest, ...rest] = allNotifs;
   const listItems = useMemo(() => {
     const today: Array<{ type: 'item'; item: AppNotification } | { type: 'section'; label: string }> = [];
     const earlier: Array<{ type: 'item'; item: AppNotification } | { type: 'section'; label: string }> = [];
@@ -92,7 +92,7 @@ export default function ChatNotificationsScreen({ navigation }: any) {
           desc: 'Start browsing pets or create your first post.',
           time: new Date().toISOString(),
           icon: 'paw',
-          read: false,
+          read: true,
         },
       ];
       await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(seed));
@@ -170,10 +170,10 @@ export default function ChatNotificationsScreen({ navigation }: any) {
     await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(next));
   };
 
-  const allSelected = messageNotifs.length > 0 && selected.size === messageNotifs.length;
+  const allSelected = allNotifs.length > 0 && selected.size === allNotifs.length;
   const toggleSelectAll = () => {
     if (allSelected) setSelected(new Set());
-    else setSelected(new Set(messageNotifs.map((n) => n.id)));
+    else setSelected(new Set(allNotifs.map((n) => n.id)));
   };
 
   return (
@@ -202,7 +202,7 @@ export default function ChatNotificationsScreen({ navigation }: any) {
               <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
             </Pressable>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Notifications</Text>
-            {messageNotifs.length > 0 ? (
+            {allNotifs.length > 0 ? (
               <View style={styles.headerActions}>
                 <Pressable onPress={markAllRead} style={{ padding: 4 }}>
                   <Text style={[styles.clearText, { color: colors.textSecondary }]}>Mark all read</Text>
@@ -233,12 +233,12 @@ export default function ChatNotificationsScreen({ navigation }: any) {
         keyExtractor={(item, index) => (item.type === 'section' ? `section_${item.label}_${index}` : item.item.id)}
         contentContainerStyle={[
           { padding: 16, paddingBottom: 110 },
-          messageNotifs.length === 0 && styles.emptyContainer,
+          allNotifs.length === 0 && styles.emptyContainer,
         ]}
         ListEmptyComponent={
           <View style={styles.emptyInner}>
             <Ionicons name="notifications-off-outline" size={56} color={colors.border} />
-            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No message notifications</Text>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No notifications</Text>
             <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
               You're all caught up! Check back later.
             </Text>
@@ -323,8 +323,13 @@ export default function ChatNotificationsScreen({ navigation }: any) {
 
               <View style={styles.textContainer}>
                 <Text style={[styles.notifTitle, { color: colors.textPrimary }]}>{notif.title}</Text>
-                <Text style={[styles.notifDesc, { color: colors.textSecondary }]}>{notif.desc}</Text>
-                <Text style={[styles.timeText, { color: colors.textSecondary }]}>{formatTime(notif.time)}</Text>
+                <Text style={[styles.notifDesc, { color: colors.textSecondary }]} numberOfLines={2}>{notif.desc}</Text>
+                <View style={styles.footerRow}>
+                  <Text style={[styles.timeText, { color: colors.textSecondary }]}>{formatTime(notif.time)}</Text>
+                  {notif.source && (
+                    <Text style={[styles.sourceText, { color: colors.textSecondary }]}>{notif.source}</Text>
+                  )}
+                </View>
               </View>
 
               {/* [PUSH-NOTIF] swipe-style delete button (shown when not in select mode) */}
@@ -388,8 +393,10 @@ const styles = StyleSheet.create({
   },
   textContainer: { flex: 1 },
   notifTitle: { fontSize: 15, fontFamily: 'DMSans_700Bold', marginBottom: 4 },
-  notifDesc: { fontSize: 13, fontFamily: 'DMSans_400Regular', lineHeight: 18 },
-  timeText: { fontSize: 11, fontFamily: 'DMSans_400Regular', marginTop: 6, opacity: 0.7 },
+  notifDesc: { fontSize: 13, fontFamily: 'DMSans_400Regular', lineHeight: 18, marginBottom: 6 },
+  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
+  timeText: { fontSize: 11, fontFamily: 'DMSans_400Regular', opacity: 0.7 },
+  sourceText: { fontSize: 11, fontFamily: 'DMSans_700Bold', opacity: 0.6 },
   deleteBtn: { paddingLeft: 12, paddingVertical: 4 },
   emptyContainer: { flex: 1, justifyContent: 'center' },
   emptyInner: { alignItems: 'center', paddingHorizontal: 32 },
